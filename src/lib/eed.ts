@@ -66,11 +66,27 @@ function getEedId(): string {
 function buildEedUrl({ params }: Pick<EedRequestOptions, "params">): string {
   const searchParams = new URLSearchParams({
     format: "json",
-    id: getEedId(),
     ...params,
   });
 
-  return `${EED_BASE_URL}?${searchParams.toString()}`;
+  // EED docs: customer id is the first URL parameter (unnamed key)
+  return `${EED_BASE_URL}?${getEedId()}&${searchParams.toString()}`;
+}
+
+function isEedSuccess(fehlernummer: string | number | undefined): boolean {
+  return String(fehlernummer ?? "") === "0";
+}
+
+async function createEedSession(
+  options: Omit<EedRequestOptions, "params" | "sessionId">,
+): Promise<string> {
+  const data = await callEed<{ sessionid: string; fehlernummer: string | number }>({
+    ...options,
+    sessionId: "",
+    params: { art: "neuesitzung" },
+  });
+
+  return data.sessionid;
 }
 
 function describeFetchError(error: unknown): string {
@@ -86,17 +102,21 @@ function describeFetchError(error: unknown): string {
   return "Unknown network error";
 }
 
-async function callEed<T extends { fehlernummer: string; fehlermeldung?: string }>(
+async function callEed<T extends { fehlernummer: string | number; fehlermeldung?: string }>(
   options: EedRequestOptions,
-): Promise<T & { neuesessionid?: string }> {
-  const url = buildEedUrl({
-    params: {
-      ...options.params,
-      sessionid: options.sessionId,
-      shopurl: options.shopUrl,
-      customerip: options.customerIpHash,
-    },
-  });
+): Promise<T & { neuesessionid?: string; sessionid?: string }> {
+  const requestParams: Record<string, string> = {
+    ...options.params,
+    shopurl: options.shopUrl,
+    customerip: options.customerIpHash,
+  };
+
+  // neuesitzung must NOT include sessionid (EED docs section 5)
+  if (options.params.art !== "neuesitzung" && options.sessionId) {
+    requestParams.sessionid = options.sessionId;
+  }
+
+  const url = buildEedUrl({ params: requestParams });
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -126,12 +146,12 @@ async function callEed<T extends { fehlernummer: string; fehlermeldung?: string 
       throw new EedApiError(message);
     }
 
-    if (data.fehlernummer !== "0") {
+    if (!isEedSuccess(data.fehlernummer)) {
       const message = data.fehlermeldung ?? "Unknown EED API error";
       if (message.includes("Test mode only possible")) {
-        throw new EedApiError(getTestSearchHint(), data.fehlernummer);
+        throw new EedApiError(getTestSearchHint(), String(data.fehlernummer));
       }
-      throw new EedApiError(message, data.fehlernummer);
+      throw new EedApiError(message, String(data.fehlernummer));
     }
 
     return data;
@@ -214,14 +234,22 @@ export async function searchProducts(
     return { products: [], total: 0, hint: getTestSearchHint() };
   }
 
+  let sessionId = options.sessionId;
+  let createdSessionId: string | undefined;
+
+  if (!sessionId || sessionId === "auto") {
+    createdSessionId = await createEedSession(options);
+    sessionId = createdSessionId;
+  }
+
   const data = await callEed<ProductSearchResponse>({
     ...options,
+    sessionId,
     params: {
       art: "artikelsuche",
       suchbg: searchTerm,
-      ...(isTestEedEnvironment()
-        ? { anzahl: "10" }
-        : { anzahl: "25", bigPicture: "1" }),
+      anzahl: "10",
+      ...(isTestEedEnvironment() ? {} : { bigPicture: "1" }),
     },
   });
 
@@ -231,7 +259,7 @@ export async function searchProducts(
   return {
     products,
     total: Number(data.gesamtanzahltreffer ?? products.length),
-    sessionId: data.neuesessionid,
+    sessionId: createdSessionId ?? data.neuesessionid,
   };
 }
 
@@ -294,11 +322,12 @@ export async function testEedConnection(
   }
 
   try {
-    const data = await callEed<{ fehlernummer: string; neuesessionid?: string }>({
+    const data = await callEed<{ fehlernummer: string | number; sessionid?: string }>({
       ...options,
+      sessionId: "",
       params: { art: "neuesitzung" },
     });
-    return { ok: true, sessionId: data.neuesessionid };
+    return { ok: true, sessionId: data.sessionid };
   } catch (error) {
     const message =
       error instanceof EedApiError ? error.message : "Connection failed";

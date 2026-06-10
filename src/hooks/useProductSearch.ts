@@ -89,7 +89,7 @@ export function useProductSearch(): UseProductSearchResult {
 
       setProducts(data.products ?? []);
       setTotal(data.total ?? 0);
-      setHint(isTestMessage ? TEST_HINT : (data.hint ?? null));
+      setHint(data.products?.length ? null : (data.hint ?? null));
       setError(isTestMessage ? null : null);
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
