@@ -17,6 +17,12 @@ import {
   isAvailable,
   parseGermanPrice,
 } from "./format";
+import {
+  getTestSearchHint,
+  isAllowedTestSearchQuery,
+  isTestEedId,
+  normalizeTestSearchQuery,
+} from "./eed-config";
 
 const EED_BASE_URL = "https://shop.euras.com/eed.php";
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -188,11 +194,17 @@ export async function searchProducts(
     return { ...result, mock: true };
   }
 
+  const searchQuery = isTestEedId() ? normalizeTestSearchQuery(trimmed) : trimmed;
+
+  if (isTestEedId() && !isAllowedTestSearchQuery(searchQuery)) {
+    throw new EedApiError(getTestSearchHint());
+  }
+
   const data = await callEed<ProductSearchResponse>({
     ...options,
     params: {
       art: "artikelsuche",
-      suchbg: trimmed,
+      suchbg: searchQuery,
       anzahl: "25",
       bigPicture: "1",
     },

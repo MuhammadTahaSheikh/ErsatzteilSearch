@@ -1,28 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-import {
-  hashCustomerIp,
-  resolveClientIp,
-  testEedConnection,
-} from "@/lib/eed";
+import { NextResponse } from "next/server";
+import { isTestEedId } from "@/lib/eed-config";
 import { isMockModeEnabled } from "@/lib/mock-data";
-import { resolveShopUrl } from "@/lib/session";
 
-export async function GET(request: NextRequest) {
-  const shopUrl = resolveShopUrl(request);
-  const customerIpHash = hashCustomerIp(
-    resolveClientIp(request.headers.get("x-forwarded-for")),
-  );
-
-  const result = await testEedConnection({
-    sessionId: "auto",
-    shopUrl,
-    customerIpHash,
-  });
-
+export async function GET() {
   return NextResponse.json({
     mockMode: isMockModeEnabled(),
-    eedIdConfigured: Boolean(process.env.EED_ID),
-    shopUrl,
-    ...result,
+    testMode: isTestEedId(),
+    testKeywords: isTestEedId() ? ["SONY", "AEG", "HDMI"] : null,
   });
 }
