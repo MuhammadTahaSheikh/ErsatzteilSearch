@@ -39,12 +39,11 @@ interface EedRequestOptions {
   params: Record<string, string>;
 }
 
+/** Public test credential from EED docs section 12 (DE test account). */
+const DEFAULT_TEST_EED_ID = "AUDs4BRTdG2KJMGkv9U3hcQZ8NUxLdZytest";
+
 function getEedId(): string {
-  const id = process.env.EED_ID;
-  if (!id) {
-    throw new EedApiError("EED_ID environment variable is not configured");
-  }
-  return id;
+  return process.env.EED_ID?.trim() || DEFAULT_TEST_EED_ID;
 }
 
 function buildEedUrl({ params }: Pick<EedRequestOptions, "params">): string {

@@ -51,7 +51,8 @@ Open [http://localhost:3000](http://localhost:3000).
 3. Set environment variables:
    - `EED_ID` = `AUDs4BRTdG2KJMGkv9U3hcQZ8NUxLdZytest`
    - `NEXT_PUBLIC_APP_URL` = your Vercel URL (e.g. `https://your-app.vercel.app`)
-4. Deploy
+   - Do **not** set `EED_USE_MOCK` on Vercel (live API only)
+4. **Redeploy** after adding variables (Deployments → ⋯ → Redeploy)
 
 ## Project Structure
 
