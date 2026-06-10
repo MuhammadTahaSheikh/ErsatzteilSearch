@@ -124,10 +124,11 @@ async function callEed<T extends { fehlernummer: string; fehlermeldung?: string 
     }
 
     if (data.fehlernummer !== "0") {
-      throw new EedApiError(
-        data.fehlermeldung ?? "Unknown EED API error",
-        data.fehlernummer,
-      );
+      const message = data.fehlermeldung ?? "Unknown EED API error";
+      if (message.includes("Test mode only possible")) {
+        throw new EedApiError(getTestSearchHint(), data.fehlernummer);
+      }
+      throw new EedApiError(message, data.fehlernummer);
     }
 
     return data;
@@ -204,7 +205,9 @@ export async function searchProducts(
     return { ...result, mock: true };
   }
 
-  if (isTestEedEnvironment() && !isAllowedTestSearchTerm(trimmed)) {
+  const searchTerm = trimmed.toUpperCase();
+
+  if (isTestEedEnvironment() && !isAllowedTestSearchTerm(searchTerm)) {
     return { products: [], total: 0, hint: getTestSearchHint() };
   }
 
@@ -212,7 +215,7 @@ export async function searchProducts(
     ...options,
     params: {
       art: "artikelsuche",
-      suchbg: trimmed,
+      suchbg: searchTerm,
       anzahl: "25",
       bigPicture: "1",
     },

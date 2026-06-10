@@ -6,6 +6,7 @@ import type { NormalizedProduct } from "@/lib/types";
 
 interface ProductCardProps {
   product: NormalizedProduct;
+  index?: number;
 }
 
 function ProductImage({ product }: { product: NormalizedProduct }) {
@@ -14,7 +15,7 @@ function ProductImage({ product }: { product: NormalizedProduct }) {
 
   if (!src) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-slate-100 text-slate-400">
+      <div className="flex h-full w-full items-center justify-center bg-slate-800/40 text-slate-600">
         <svg className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
             strokeLinecap="round"
@@ -32,38 +33,53 @@ function ProductImage({ product }: { product: NormalizedProduct }) {
       src={src}
       alt={product.name}
       fill
-      className="object-contain p-3"
+      className="object-contain p-4 transition-transform duration-500 group-hover:scale-110"
       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
       unoptimized
     />
   );
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, index = 0 }: ProductCardProps) {
+  const delay = Math.min(index * 0.06, 0.48);
+
   return (
     <Link
       href={`/product/${encodeURIComponent(product.id)}`}
-      className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-md"
+      className="group glass-card card-shine flex flex-col overflow-hidden rounded-2xl"
+      style={{
+        animation: `fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s forwards`,
+        opacity: 0,
+      }}
     >
-      <div className="relative aspect-square bg-white">
+      <div className="relative aspect-square overflow-hidden bg-slate-900/30">
         <ProductImage product={product} />
         {!product.available && (
-          <span className="absolute top-2 left-2 rounded-md bg-slate-800/80 px-2 py-0.5 text-xs font-medium text-white">
+          <span className="absolute top-3 left-3 rounded-lg bg-slate-900/80 px-2.5 py-1 text-xs font-semibold text-slate-300 backdrop-blur-sm">
             Unavailable
           </span>
         )}
+        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
       </div>
-      <div className="flex flex-1 flex-col gap-2 p-4">
+      <div className="flex flex-1 flex-col gap-2 p-5">
         {product.category && (
-          <p className="text-xs font-medium tracking-wide text-orange-600 uppercase">
+          <p className="text-xs font-semibold tracking-widest text-orange-400 uppercase">
             {product.category}
           </p>
         )}
-        <h3 className="line-clamp-2 text-sm leading-snug font-semibold text-slate-900 group-hover:text-orange-700">
+        <h3
+          className="line-clamp-2 text-sm leading-snug font-semibold text-white transition-colors group-hover:text-orange-300"
+          style={{ fontFamily: "var(--font-outfit), sans-serif" }}
+        >
           {product.name}
         </h3>
-        <div className="mt-auto flex items-end justify-between gap-2">
-          <p className="text-lg font-bold text-slate-900">{product.price}</p>
+        <div className="mt-auto flex items-end justify-between gap-2 pt-2">
+          <p
+            className="text-xl font-bold text-white"
+            style={{ fontFamily: "var(--font-outfit), sans-serif" }}
+          >
+            {product.price}
+          </p>
           {product.deliveryTime && (
             <p className="text-right text-xs text-slate-500">{product.deliveryTime}</p>
           )}

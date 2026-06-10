@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import Link from "next/link";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -11,6 +12,12 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const outfit = Outfit({
+  variable: "--font-outfit",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -26,31 +33,47 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body
-        className="flex min-h-full flex-col bg-slate-50 text-slate-900"
+        className="flex min-h-full flex-col text-slate-100"
         suppressHydrationWarning
       >
-        <header className="border-b border-slate-200 bg-white">
+        <AnimatedBackground />
+        <header className="sticky top-0 z-50 glass border-b border-white/5">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-600 text-sm font-bold text-white">
+            <Link
+              href="/"
+              className="group flex items-center gap-3 transition-opacity hover:opacity-90"
+            >
+              <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 text-sm font-bold text-white shadow-lg shadow-orange-500/30 transition-transform duration-300 group-hover:scale-105">
+                <span className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent" />
                 ES
               </span>
-              <span className="text-lg font-bold text-slate-900">
-                Ersatzteil<span className="text-orange-600">Search</span>
+              <span
+                className="font-display text-xl font-bold tracking-tight text-white"
+                style={{ fontFamily: "var(--font-outfit), sans-serif" }}
+              >
+                Ersatzteil
+                <span className="text-gradient">Search</span>
               </span>
             </Link>
-            <p className="hidden text-sm text-slate-500 sm:block">
-              Powered by Muhammad Taha
-            </p>
+            <div className="hidden items-center gap-2 sm:flex">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+              <p className="text-sm text-slate-400">
+                Powered by{" "}
+                <span className="font-medium text-slate-300">Muhammad Taha</span>
+              </p>
+            </div>
           </div>
         </header>
-        <main className="flex-1">{children}</main>
-        <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-400">
-          Technical test task — Mini Product Search
+        <main className="relative flex-1">{children}</main>
+        <footer className="border-t border-white/5 py-8 text-center">
+          <p className="text-xs text-slate-500">
+            Technical test task —{" "}
+            <span className="text-slate-400">Mini Product Search</span>
+          </p>
         </footer>
       </body>
     </html>

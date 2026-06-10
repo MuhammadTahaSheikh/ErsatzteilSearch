@@ -51,9 +51,16 @@ export async function GET(request: NextRequest) {
         ? error.message
         : "Failed to search products";
 
+    const isTestHint = message.includes("Test API only supports");
+
     return NextResponse.json(
-      { error: message, products: [], total: 0 },
-      { status: 502 },
+      {
+        error: isTestHint ? undefined : message,
+        hint: isTestHint ? message : undefined,
+        products: [],
+        total: 0,
+      },
+      { status: isTestHint ? 200 : 502 },
     );
   }
 }
