@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  EED_TEST_SEARCH_TERMS,
-  getTestSearchHint,
   hashCustomerIp,
-  isTestEedEnvironment,
   resolveClientIp,
   testEedConnection,
 } from "@/lib/eed";
@@ -24,8 +21,6 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     mockMode: isMockModeEnabled(),
-    testMode: isTestEedEnvironment() && !isMockModeEnabled(),
-    allowedSearchTerms: [...EED_TEST_SEARCH_TERMS],
     eedIdConfigured: Boolean(process.env.EED_ID),
     shopUrl,
     ...result,

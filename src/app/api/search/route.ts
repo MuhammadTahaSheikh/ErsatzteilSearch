@@ -31,7 +31,6 @@ export async function GET(request: NextRequest) {
       products: result.products,
       total: result.total,
       ...(result.mock ? { mock: true } : {}),
-      ...(result.hint ? { hint: result.hint } : {}),
     });
 
     if (result.sessionId) {
@@ -51,20 +50,9 @@ export async function GET(request: NextRequest) {
         ? error.message
         : "Failed to search products";
 
-    const isTestHint =
-      message.includes("Test API only supports") ||
-      message.includes("Test mode only possible");
-
     return NextResponse.json(
-      {
-        error: isTestHint ? undefined : message,
-        hint: isTestHint
-          ? "Test API only supports: SONY, AEG, HDMI — click a button below"
-          : undefined,
-        products: [],
-        total: 0,
-      },
-      { status: isTestHint ? 200 : 502 },
+      { error: message, products: [], total: 0 },
+      { status: 502 },
     );
   }
 }

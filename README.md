@@ -34,7 +34,7 @@ cp .env.example .env.local
 
 The default `EED_ID` uses the **German test account** from the [EED documentation](https://shop.euras.com/admin/Dok/eed-doku-eng.php) (section 12). The `test` suffix enables the free test environment.
 
-Try these search terms with the test API: `SONY`, `AEG`, `HDMI` (only these work in test mode per EED docs section 12).
+Try these search terms in test mode: `SONY`, `HDMI`, `AEG`, `SICHERUNG`, `GLAS`.
 
 ### 3. Run locally
 
@@ -51,8 +51,7 @@ Open [http://localhost:3000](http://localhost:3000).
 3. Set environment variables:
    - `EED_ID` = `AUDs4BRTdG2KJMGkv9U3hcQZ8NUxLdZytest`
    - `NEXT_PUBLIC_APP_URL` = your Vercel URL (e.g. `https://your-app.vercel.app`)
-   - Do **not** set `EED_USE_MOCK` on Vercel (live API only)
-4. **Redeploy** after adding variables (Deployments → ⋯ → Redeploy)
+4. Deploy
 
 ## Project Structure
 

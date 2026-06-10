@@ -19,6 +19,9 @@ export async function setSessionId(sessionId: string): Promise<void> {
 }
 
 export function resolveShopUrlFromHost(host: string | null, referer?: string | null): string {
+  const configured = process.env.NEXT_PUBLIC_APP_URL;
+  if (configured) return configured.replace(/\/$/, "");
+
   if (referer) {
     try {
       const url = new URL(referer);
@@ -36,23 +39,9 @@ export function resolveShopUrlFromHost(host: string | null, referer?: string | n
   return "http://localhost:3000";
 }
 
-/** Prefer the shop front-end URL (EED expects a shop page, not an API route). */
 export function resolveShopUrl(request: Request): string {
-  try {
-    const url = new URL(request.url);
-    if (url.pathname.startsWith("/api/")) {
-      return url.origin;
-    }
-    return `${url.origin}${url.pathname}`;
-  } catch {
-    const configured = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
-    if (configured && !configured.includes("localhost")) {
-      return configured;
-    }
-
-    return resolveShopUrlFromHost(
-      request.headers.get("host"),
-      request.headers.get("referer"),
-    );
-  }
+  return resolveShopUrlFromHost(
+    request.headers.get("host"),
+    request.headers.get("referer"),
+  );
 }

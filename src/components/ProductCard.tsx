@@ -6,7 +6,6 @@ import type { NormalizedProduct } from "@/lib/types";
 
 interface ProductCardProps {
   product: NormalizedProduct;
-  index?: number;
 }
 
 function ProductImage({ product }: { product: NormalizedProduct }) {
@@ -15,7 +14,7 @@ function ProductImage({ product }: { product: NormalizedProduct }) {
 
   if (!src) {
     return (
-      <div className="text-subtle flex h-full w-full items-center justify-center bg-[var(--card-image-bg)]">
+      <div className="flex h-full w-full items-center justify-center bg-slate-100 text-slate-400">
         <svg className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
             strokeLinecap="round"
@@ -33,54 +32,40 @@ function ProductImage({ product }: { product: NormalizedProduct }) {
       src={src}
       alt={product.name}
       fill
-      className="object-contain p-4 transition-transform duration-500 group-hover:scale-110"
+      className="object-contain p-3"
       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
       unoptimized
     />
   );
 }
 
-export function ProductCard({ product, index = 0 }: ProductCardProps) {
-  const delay = Math.min(index * 0.06, 0.48);
-
+export function ProductCard({ product }: ProductCardProps) {
   return (
     <Link
       href={`/product/${encodeURIComponent(product.id)}`}
-      className="group glass-card card-shine flex flex-col overflow-hidden rounded-2xl"
-      style={{
-        animation: `fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s forwards`,
-        opacity: 0,
-      }}
+      className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-md"
     >
-      <div className="relative aspect-square overflow-hidden bg-[var(--card-image-bg)]">
+      <div className="relative aspect-square bg-white">
         <ProductImage product={product} />
         {!product.available && (
-          <span className="text-body absolute top-3 left-3 rounded-lg bg-[var(--heading)]/80 px-2.5 py-1 text-xs font-semibold text-[var(--background)] backdrop-blur-sm">
+          <span className="absolute top-2 left-2 rounded-md bg-slate-800/80 px-2 py-0.5 text-xs font-medium text-white">
             Unavailable
           </span>
         )}
       </div>
-      <div className="flex flex-1 flex-col gap-2 p-5">
+      <div className="flex flex-1 flex-col gap-2 p-4">
         {product.category && (
-          <p className="text-accent text-xs font-semibold tracking-widest uppercase">
+          <p className="text-xs font-medium tracking-wide text-orange-600 uppercase">
             {product.category}
           </p>
         )}
-        <h3
-          className="text-heading line-clamp-2 text-sm leading-snug font-semibold transition-colors group-hover:text-orange-600"
-          style={{ fontFamily: "var(--font-outfit), sans-serif" }}
-        >
+        <h3 className="line-clamp-2 text-sm leading-snug font-semibold text-slate-900 group-hover:text-orange-700">
           {product.name}
         </h3>
-        <div className="mt-auto flex items-end justify-between gap-2 pt-2">
-          <p
-            className="text-heading text-xl font-bold"
-            style={{ fontFamily: "var(--font-outfit), sans-serif" }}
-          >
-            {product.price}
-          </p>
+        <div className="mt-auto flex items-end justify-between gap-2">
+          <p className="text-lg font-bold text-slate-900">{product.price}</p>
           {product.deliveryTime && (
-            <p className="text-subtle text-right text-xs">{product.deliveryTime}</p>
+            <p className="text-right text-xs text-slate-500">{product.deliveryTime}</p>
           )}
         </div>
       </div>

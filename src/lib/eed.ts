@@ -17,9 +17,8 @@ import {
   isAvailable,
   parseGermanPrice,
 } from "./format";
-import { parseEedJson } from "./parse-eed-json";
-import { buildEedUrl, DEFAULT_TEST_EED_ID, getEedIdFromEnv } from "./eed-url";
 
+const EED_BASE_URL = "https://shop.euras.com/eed.php";
 const REQUEST_TIMEOUT_MS = 30_000;
 
 export class EedApiError extends Error {
@@ -40,42 +39,22 @@ interface EedRequestOptions {
   params: Record<string, string>;
 }
 
-/** Public test credential from EED docs section 12 (DE test account). */
-export { DEFAULT_TEST_EED_ID };
-
-/** Allowed search terms when using the EED test environment. */
-export const EED_TEST_SEARCH_TERMS = ["SONY", "AEG", "HDMI"] as const;
-
-export function isTestEedEnvironment(): boolean {
-  return getEedId().endsWith("test");
-}
-
-export function isAllowedTestSearchTerm(query: string): boolean {
-  const normalized = query.trim().toUpperCase();
-  return EED_TEST_SEARCH_TERMS.some((term) => term === normalized);
-}
-
-export function getTestSearchHint(): string {
-  return `Test API only supports: ${EED_TEST_SEARCH_TERMS.join(", ")}`;
-}
-
 function getEedId(): string {
-  return getEedIdFromEnv(process.env.EED_ID);
+  const id = process.env.EED_ID;
+  if (!id) {
+    throw new EedApiError("EED_ID environment variable is not configured");
+  }
+  return id;
 }
 
-async function resolveSessionId(
-  options: Omit<EedRequestOptions, "params" | "sessionId"> & { sessionId: string },
-): Promise<string> {
-  if (options.sessionId && options.sessionId !== "auto") {
-    return options.sessionId;
-  }
+function buildEedUrl({ params }: Pick<EedRequestOptions, "params">): string {
+  const searchParams = new URLSearchParams({
+    format: "json",
+    id: getEedId(),
+    ...params,
+  });
 
-  // Test environment: neuesitzung is disabled — use sessionid=auto (EED docs 7.0.1.1)
-  if (isTestEedEnvironment()) {
-    return "auto";
-  }
-
-  return createEedSession(options);
+  return `${EED_BASE_URL}?${searchParams.toString()}`;
 }
 
 function describeFetchError(error: unknown): string {
@@ -91,36 +70,17 @@ function describeFetchError(error: unknown): string {
   return "Unknown network error";
 }
 
-function isEedSuccess(fehlernummer: string | number | undefined): boolean {
-  return String(fehlernummer ?? "") === "0";
-}
-
-async function createEedSession(
-  options: Omit<EedRequestOptions, "params" | "sessionId">,
-): Promise<string> {
-  const data = await callEed<{ sessionid: string; fehlernummer: string | number }>({
-    ...options,
-    sessionId: "",
-    params: { art: "neuesitzung" },
-  });
-
-  return data.sessionid;
-}
-
-async function callEed<T extends { fehlernummer: string | number; fehlermeldung?: string }>(
+async function callEed<T extends { fehlernummer: string; fehlermeldung?: string }>(
   options: EedRequestOptions,
-): Promise<T & { neuesessionid?: string; sessionid?: string }> {
-  const requestParams: Record<string, string> = {
-    ...options.params,
-    shopurl: options.shopUrl,
-    customerip: options.customerIpHash,
-  };
-
-  if (options.params.art !== "neuesitzung" && options.sessionId) {
-    requestParams.sessionid = options.sessionId;
-  }
-
-  const url = buildEedUrl(getEedId(), requestParams);
+): Promise<T & { neuesessionid?: string }> {
+  const url = buildEedUrl({
+    params: {
+      ...options.params,
+      sessionid: options.sessionId,
+      shopurl: options.shopUrl,
+      customerip: options.customerIpHash,
+    },
+  });
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -140,22 +100,19 @@ async function callEed<T extends { fehlernummer: string | number; fehlermeldung?
     }
 
     const text = await response.text();
-
     let data: T & { neuesessionid?: string };
+
     try {
-      data = parseEedJson<T & { neuesessionid?: string }>(text);
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "EED gateway returned invalid JSON";
-      throw new EedApiError(message);
+      data = JSON.parse(text) as T & { neuesessionid?: string };
+    } catch {
+      throw new EedApiError("EED gateway returned invalid JSON");
     }
 
-    if (!isEedSuccess(data.fehlernummer)) {
-      const message = data.fehlermeldung ?? "Unknown EED API error";
-      if (message.includes("Test mode only possible")) {
-        throw new EedApiError(getTestSearchHint(), String(data.fehlernummer));
-      }
-      throw new EedApiError(message, String(data.fehlernummer));
+    if (data.fehlernummer !== "0") {
+      throw new EedApiError(
+        data.fehlermeldung ?? "Unknown EED API error",
+        data.fehlernummer,
+      );
     }
 
     return data;
@@ -220,7 +177,6 @@ export async function searchProducts(
   total: number;
   sessionId?: string;
   mock?: boolean;
-  hint?: string;
 }> {
   const trimmed = query.trim();
   if (trimmed.length < 2) {
@@ -232,22 +188,13 @@ export async function searchProducts(
     return { ...result, mock: true };
   }
 
-  const searchTerm = trimmed.toUpperCase();
-
-  if (isTestEedEnvironment() && !isAllowedTestSearchTerm(searchTerm)) {
-    return { products: [], total: 0, hint: getTestSearchHint() };
-  }
-
-  let sessionId = await resolveSessionId(options);
-
   const data = await callEed<ProductSearchResponse>({
     ...options,
-    sessionId,
     params: {
       art: "artikelsuche",
-      suchbg: searchTerm,
-      anzahl: "10",
-      ...(isTestEedEnvironment() ? {} : { bigPicture: "1" }),
+      suchbg: trimmed,
+      anzahl: "25",
+      bigPicture: "1",
     },
   });
 
@@ -277,11 +224,8 @@ export async function getProductDetails(
     return { product, mock: true };
   }
 
-  const sessionId = await resolveSessionId(options);
-
   const data = await callEed<ProductDetailResponse>({
     ...options,
-    sessionId,
     params: {
       art: "artikeldetails",
       artnr: articleId,
@@ -304,11 +248,8 @@ export async function getProductImageUrl(
     return null;
   }
 
-  const sessionId = await resolveSessionId(options);
-
   const data = await callEed<{ fehlernummer: string; tempurl?: string }>({
     ...options,
-    sessionId,
     params: {
       art: "bild",
       artnr: articleId,
@@ -326,21 +267,11 @@ export async function testEedConnection(
   }
 
   try {
-    if (isTestEedEnvironment()) {
-      const data = await callEed<ProductSearchResponse>({
-        ...options,
-        sessionId: "auto",
-        params: { art: "artikelsuche", suchbg: "SONY", anzahl: "1" },
-      });
-      return { ok: true, sessionId: data.neuesessionid };
-    }
-
-    const data = await callEed<{ fehlernummer: string | number; sessionid?: string }>({
+    const data = await callEed<{ fehlernummer: string; neuesessionid?: string }>({
       ...options,
-      sessionId: "",
       params: { art: "neuesitzung" },
     });
-    return { ok: true, sessionId: data.sessionid };
+    return { ok: true, sessionId: data.neuesessionid };
   } catch (error) {
     const message =
       error instanceof EedApiError ? error.message : "Connection failed";
