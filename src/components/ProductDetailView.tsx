@@ -14,7 +14,7 @@ function DetailImage({ product }: { product: NormalizedProductDetail }) {
 
   if (!src) {
     return (
-      <div className="glass flex aspect-square items-center justify-center rounded-2xl text-slate-600">
+      <div className="surface text-subtle flex aspect-square items-center justify-center rounded-2xl">
         <svg className="h-20 w-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
             strokeLinecap="round"
@@ -28,7 +28,7 @@ function DetailImage({ product }: { product: NormalizedProductDetail }) {
   }
 
   return (
-    <div className="glass group relative aspect-square overflow-hidden rounded-2xl">
+    <div className="surface group relative aspect-square overflow-hidden rounded-2xl bg-[var(--card-image-bg)]">
       <Image
         src={src}
         alt={product.name}
@@ -38,7 +38,6 @@ function DetailImage({ product }: { product: NormalizedProductDetail }) {
         priority
         unoptimized
       />
-      <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/5" />
     </div>
   );
 }
@@ -46,9 +45,9 @@ function DetailImage({ product }: { product: NormalizedProductDetail }) {
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
   return (
-    <div className="flex justify-between gap-4 border-b border-white/5 py-3.5 text-sm last:border-0">
-      <dt className="text-slate-500">{label}</dt>
-      <dd className="text-right font-medium text-slate-200">{value}</dd>
+    <div className="flex justify-between gap-4 border-b border-[var(--surface-border)] py-3.5 text-sm last:border-0">
+      <dt className="text-muted">{label}</dt>
+      <dd className="text-heading text-right font-medium">{value}</dd>
     </div>
   );
 }
@@ -60,9 +59,9 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
     <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
       <Link
         href="/"
-        className="animate-fade-up mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-300 transition-all hover:border-orange-500/40 hover:bg-orange-500/10 hover:text-orange-300"
+        className="animate-fade-up text-body surface mb-8 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all hover:border-orange-400/40 hover:text-orange-600"
       >
-        <svg className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
         Back to search
@@ -73,17 +72,14 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
           <DetailImage product={product} />
         </div>
 
-        <div
-          className="animate-fade-up"
-          style={{ animationDelay: "0.2s", opacity: 0 }}
-        >
+        <div className="animate-fade-up" style={{ animationDelay: "0.2s", opacity: 0 }}>
           {product.category && (
-            <p className="mb-3 text-xs font-semibold tracking-widest text-orange-400 uppercase">
+            <p className="text-accent mb-3 text-xs font-semibold tracking-widest uppercase">
               {product.category}
             </p>
           )}
           <h1
-            className="mb-5 text-3xl leading-tight font-bold text-white sm:text-4xl"
+            className="text-heading mb-5 text-3xl leading-tight font-bold sm:text-4xl"
             style={{ fontFamily: "var(--font-outfit), sans-serif" }}
           >
             {product.name}
@@ -91,7 +87,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
 
           <div className="mb-8 flex flex-wrap items-center gap-4">
             <p
-              className="text-4xl font-bold text-white"
+              className="text-heading text-4xl font-bold"
               style={{ fontFamily: "var(--font-outfit), sans-serif" }}
             >
               {product.price}
@@ -99,8 +95,8 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
             <span
               className={`rounded-full px-4 py-1.5 text-xs font-semibold ${
                 product.available
-                  ? "border border-emerald-500/30 bg-emerald-500/15 text-emerald-300"
-                  : "border border-slate-500/30 bg-slate-500/15 text-slate-400"
+                  ? "badge-available"
+                  : "border border-[var(--surface-border)] bg-[var(--card-image-bg)] text-muted"
               }`}
             >
               {product.available ? "Available" : "Not available"}
@@ -108,15 +104,15 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
           </div>
 
           {product.deliveryTime && (
-            <p className="mb-8 flex items-center gap-2 text-sm text-slate-400">
-              <svg className="h-4 w-4 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <p className="text-body mb-8 flex items-center gap-2 text-sm">
+              <svg className="text-accent h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              Delivery: <span className="font-medium text-slate-300">{product.deliveryTime}</span>
+              Delivery: <span className="text-heading font-medium">{product.deliveryTime}</span>
             </p>
           )}
 
-          <dl className="glass mb-6 rounded-2xl px-6 py-2">
+          <dl className="surface mb-6 rounded-2xl px-6 py-2">
             <InfoRow label="Article no." value={product.id} />
             <InfoRow label="EAN" value={product.ean} />
             <InfoRow label="Manufacturer" value={product.manufacturer} />
@@ -128,12 +124,12 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
           {product.attributes && Object.keys(product.attributes).length > 0 && (
             <div>
               <h2
-                className="mb-4 text-sm font-semibold tracking-widest text-slate-400 uppercase"
+                className="text-muted mb-4 text-sm font-semibold tracking-widest uppercase"
                 style={{ fontFamily: "var(--font-outfit), sans-serif" }}
               >
                 Specifications
               </h2>
-              <dl className="glass rounded-2xl px-6 py-2">
+              <dl className="surface rounded-2xl px-6 py-2">
                 {Object.entries(product.attributes).map(([key, value]) => (
                   <InfoRow
                     key={key}

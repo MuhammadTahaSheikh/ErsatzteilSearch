@@ -20,18 +20,18 @@ export function ProductSearchPage() {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
       <header className="mb-12 text-center lg:mb-16">
-        <div className="animate-fade-up mb-4 inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-1.5 text-xs font-semibold tracking-widest text-orange-300 uppercase">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-orange-400" />
+        <div className="animate-fade-up badge-pill mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold tracking-widest uppercase">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-orange-500" />
           Spare Parts Search
         </div>
         <h1
-          className="animate-fade-up stagger-1 mb-4 text-4xl leading-tight font-extrabold tracking-tight sm:text-5xl lg:text-6xl"
+          className="animate-fade-up stagger-1 text-heading mb-4 text-4xl leading-tight font-extrabold tracking-tight sm:text-5xl lg:text-6xl"
           style={{ fontFamily: "var(--font-outfit), sans-serif" }}
         >
           Find the right part,{" "}
           <span className="text-gradient">fast</span>
         </h1>
-        <p className="animate-fade-up stagger-2 mx-auto mb-8 max-w-2xl text-lg text-slate-400">
+        <p className="animate-fade-up stagger-2 text-body mx-auto mb-8 max-w-2xl text-lg">
           {testMode
             ? "Test API — select one of the allowed keywords below."
             : "Search spare parts and accessories with instant results."}
@@ -41,12 +41,12 @@ export function ProductSearchPage() {
           {STATS.map((stat) => (
             <div key={stat.label} className="text-center">
               <p
-                className="text-2xl font-bold text-white sm:text-3xl"
+                className="text-heading text-2xl font-bold sm:text-3xl"
                 style={{ fontFamily: "var(--font-outfit), sans-serif" }}
               >
                 {stat.value}
               </p>
-              <p className="text-xs tracking-wider text-slate-500 uppercase">
+              <p className="text-subtle text-xs tracking-wider uppercase">
                 {stat.label}
               </p>
             </div>
@@ -56,17 +56,15 @@ export function ProductSearchPage() {
 
       {testMode ? (
         <div className="animate-fade-up stagger-4 mb-10 text-center">
-          <p className="mb-4 text-sm text-slate-500">Select a test keyword</p>
+          <p className="text-muted mb-4 text-sm">Select a test keyword</p>
           <div className="flex flex-wrap justify-center gap-3">
             {TEST_SEARCH_TERMS.map((term) => (
               <button
                 key={term}
                 type="button"
                 onClick={() => search(term)}
-                className={`chip-hover rounded-full px-6 py-2.5 text-sm font-semibold transition ${
-                  query === term
-                    ? "bg-orange-500 text-white shadow-lg shadow-orange-500/25"
-                    : "glass text-slate-300"
+                className={`rounded-full px-6 py-2.5 text-sm font-semibold transition ${
+                  query === term ? "chip-active" : "chip"
                 }`}
               >
                 {term}
@@ -85,27 +83,27 @@ export function ProductSearchPage() {
       )}
 
       {hint && (
-        <div className="animate-scale-in mx-auto mb-6 max-w-xl rounded-2xl border border-amber-500/30 bg-amber-500/10 px-5 py-4 text-center text-sm text-amber-200">
+        <div className="animate-scale-in alert-warning mx-auto mb-6 max-w-xl rounded-2xl px-5 py-4 text-center text-sm">
           {hint}
         </div>
       )}
 
       {error && (
-        <div className="animate-scale-in mx-auto max-w-xl rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-center text-sm text-red-300">
+        <div className="animate-scale-in alert-error mx-auto max-w-xl rounded-2xl px-5 py-4 text-center text-sm">
           {error}
         </div>
       )}
 
       {query && !error && !hint && (
-        <p className="animate-fade-in mb-6 flex items-center gap-2 text-sm text-slate-400">
+        <p className="animate-fade-in text-muted mb-6 flex items-center gap-2 text-sm">
           {loading ? (
             <>
-              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-orange-400" />
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-orange-500" />
               Searching…
             </>
           ) : (
             <>
-              <span className="font-semibold text-orange-400">{total}</span>
+              <span className="text-accent font-semibold">{total}</span>
               result{total === 1 ? "" : "s"} for &ldquo;{query}&rdquo;
             </>
           )}
@@ -113,9 +111,18 @@ export function ProductSearchPage() {
       )}
 
       {showNoResults && (
-        <div className="animate-scale-in glass mx-auto max-w-lg rounded-2xl py-20 text-center">
-          <p className="text-lg font-semibold text-white">No products found</p>
-          <p className="mt-2 text-sm text-slate-500">Try SONY, AEG, or HDMI</p>
+        <div className="animate-scale-in surface mx-auto max-w-lg rounded-2xl py-20 text-center">
+          <div className="text-muted mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--card-image-bg)]">
+            <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+              />
+            </svg>
+          </div>
+          <p className="text-heading text-lg font-semibold">No products found</p>
+          <p className="text-muted mt-2 text-sm">Try SONY, AEG, or HDMI</p>
         </div>
       )}
 

@@ -17,6 +17,7 @@ import {
   isAvailable,
   parseGermanPrice,
 } from "./format";
+import { parseEedJson } from "./parse-eed-json";
 
 const EED_BASE_URL = "https://shop.euras.com/eed.php";
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -65,11 +66,11 @@ function getEedId(): string {
 function buildEedUrl({ params }: Pick<EedRequestOptions, "params">): string {
   const searchParams = new URLSearchParams({
     format: "json",
+    id: getEedId(),
     ...params,
   });
 
-  // EED docs: customer id is the first URL parameter (before format=json&...)
-  return `${EED_BASE_URL}?${getEedId()}&${searchParams.toString()}`;
+  return `${EED_BASE_URL}?${searchParams.toString()}`;
 }
 
 function describeFetchError(error: unknown): string {
@@ -115,12 +116,14 @@ async function callEed<T extends { fehlernummer: string; fehlermeldung?: string 
     }
 
     const text = await response.text();
-    let data: T & { neuesessionid?: string };
 
+    let data: T & { neuesessionid?: string };
     try {
-      data = JSON.parse(text) as T & { neuesessionid?: string };
-    } catch {
-      throw new EedApiError("EED gateway returned invalid JSON");
+      data = parseEedJson<T & { neuesessionid?: string }>(text);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "EED gateway returned invalid JSON";
+      throw new EedApiError(message);
     }
 
     if (data.fehlernummer !== "0") {

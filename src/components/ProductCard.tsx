@@ -15,7 +15,7 @@ function ProductImage({ product }: { product: NormalizedProduct }) {
 
   if (!src) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-slate-800/40 text-slate-600">
+      <div className="text-subtle flex h-full w-full items-center justify-center bg-[var(--card-image-bg)]">
         <svg className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
             strokeLinecap="round"
@@ -52,36 +52,35 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
         opacity: 0,
       }}
     >
-      <div className="relative aspect-square overflow-hidden bg-slate-900/30">
+      <div className="relative aspect-square overflow-hidden bg-[var(--card-image-bg)]">
         <ProductImage product={product} />
         {!product.available && (
-          <span className="absolute top-3 left-3 rounded-lg bg-slate-900/80 px-2.5 py-1 text-xs font-semibold text-slate-300 backdrop-blur-sm">
+          <span className="text-body absolute top-3 left-3 rounded-lg bg-[var(--heading)]/80 px-2.5 py-1 text-xs font-semibold text-[var(--background)] backdrop-blur-sm">
             Unavailable
           </span>
         )}
-        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
       </div>
       <div className="flex flex-1 flex-col gap-2 p-5">
         {product.category && (
-          <p className="text-xs font-semibold tracking-widest text-orange-400 uppercase">
+          <p className="text-accent text-xs font-semibold tracking-widest uppercase">
             {product.category}
           </p>
         )}
         <h3
-          className="line-clamp-2 text-sm leading-snug font-semibold text-white transition-colors group-hover:text-orange-300"
+          className="text-heading line-clamp-2 text-sm leading-snug font-semibold transition-colors group-hover:text-orange-600"
           style={{ fontFamily: "var(--font-outfit), sans-serif" }}
         >
           {product.name}
         </h3>
         <div className="mt-auto flex items-end justify-between gap-2 pt-2">
           <p
-            className="text-xl font-bold text-white"
+            className="text-heading text-xl font-bold"
             style={{ fontFamily: "var(--font-outfit), sans-serif" }}
           >
             {product.price}
           </p>
           {product.deliveryTime && (
-            <p className="text-right text-xs text-slate-500">{product.deliveryTime}</p>
+            <p className="text-subtle text-right text-xs">{product.deliveryTime}</p>
           )}
         </div>
       </div>

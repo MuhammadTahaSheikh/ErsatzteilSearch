@@ -46,21 +46,21 @@ export default async function ProductPage({ params }: ProductPageProps) {
     if (error instanceof EedApiError) {
       return (
         <div className="mx-auto max-w-lg px-4 py-24 text-center">
-          <div className="glass animate-scale-in mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl text-red-400">
+          <div className="alert-error animate-scale-in mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl">
             <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
             </svg>
           </div>
           <h1
-            className="mb-3 text-2xl font-bold text-white"
+            className="text-heading mb-3 text-2xl font-bold"
             style={{ fontFamily: "var(--font-outfit), sans-serif" }}
           >
             Product unavailable
           </h1>
-          <p className="mb-8 text-slate-400">{error.message}</p>
+          <p className="text-body mb-8">{error.message}</p>
           <Link
             href="/"
-            className="inline-flex items-center gap-2 rounded-full border border-orange-500/40 bg-orange-500/10 px-6 py-2.5 text-sm font-medium text-orange-300 transition hover:bg-orange-500/20"
+            className="chip-active inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-medium"
           >
             ← Back to search
           </Link>
