@@ -36,10 +36,13 @@ export function resolveShopUrlFromHost(host: string | null, referer?: string | n
   return "http://localhost:3000";
 }
 
-/** Prefer the actual incoming request URL so shopurl matches the deployed site. */
+/** Prefer the shop front-end URL (EED expects a shop page, not an API route). */
 export function resolveShopUrl(request: Request): string {
   try {
     const url = new URL(request.url);
+    if (url.pathname.startsWith("/api/")) {
+      return url.origin;
+    }
     return `${url.origin}${url.pathname}`;
   } catch {
     const configured = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");

@@ -63,13 +63,20 @@ function getEedId(): string {
   return process.env.EED_ID?.trim() || DEFAULT_TEST_EED_ID;
 }
 
-function buildEedUrl({ params }: Pick<EedRequestOptions, "params">): string {
+function buildEedUrl(
+  { params }: Pick<EedRequestOptions, "params">,
+  style: "prefix" | "id" = "prefix",
+): string {
   const searchParams = new URLSearchParams({
     format: "json",
     ...params,
   });
 
-  // EED docs: customer id is the first URL parameter (unnamed key)
+  if (style === "id") {
+    searchParams.set("id", getEedId());
+    return `${EED_BASE_URL}?${searchParams.toString()}`;
+  }
+
   return `${EED_BASE_URL}?${getEedId()}&${searchParams.toString()}`;
 }
 
@@ -104,6 +111,7 @@ function describeFetchError(error: unknown): string {
 
 async function callEed<T extends { fehlernummer: string | number; fehlermeldung?: string }>(
   options: EedRequestOptions,
+  urlStyle: "prefix" | "id" = "prefix",
 ): Promise<T & { neuesessionid?: string; sessionid?: string }> {
   const requestParams: Record<string, string> = {
     ...options.params,
@@ -111,12 +119,11 @@ async function callEed<T extends { fehlernummer: string | number; fehlermeldung?
     customerip: options.customerIpHash,
   };
 
-  // neuesitzung must NOT include sessionid (EED docs section 5)
   if (options.params.art !== "neuesitzung" && options.sessionId) {
     requestParams.sessionid = options.sessionId;
   }
 
-  const url = buildEedUrl({ params: requestParams });
+  const url = buildEedUrl({ params: requestParams }, urlStyle);
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -237,21 +244,41 @@ export async function searchProducts(
   let sessionId = options.sessionId;
   let createdSessionId: string | undefined;
 
+  const runSearch = (style: "prefix" | "id") =>
+    callEed<ProductSearchResponse>(
+      {
+        ...options,
+        sessionId: sessionId!,
+        params: {
+          art: "artikelsuche",
+          suchbg: searchTerm,
+          anzahl: "10",
+          ...(isTestEedEnvironment() ? {} : { bigPicture: "1" }),
+        },
+      },
+      style,
+    );
+
   if (!sessionId || sessionId === "auto") {
     createdSessionId = await createEedSession(options);
     sessionId = createdSessionId;
   }
 
-  const data = await callEed<ProductSearchResponse>({
-    ...options,
-    sessionId,
-    params: {
-      art: "artikelsuche",
-      suchbg: searchTerm,
-      anzahl: "10",
-      ...(isTestEedEnvironment() ? {} : { bigPicture: "1" }),
-    },
-  });
+  let data: ProductSearchResponse & { neuesessionid?: string };
+
+  try {
+    data = await runSearch("prefix");
+  } catch (error) {
+    const message = error instanceof EedApiError ? error.message : "";
+    if (
+      isAllowedTestSearchTerm(searchTerm) &&
+      message.includes("Test mode only possible")
+    ) {
+      data = await runSearch("id");
+    } else {
+      throw error;
+    }
+  }
 
   const hits = data.treffer ?? {};
   const products = Object.values(hits).map(normalizeProduct);
