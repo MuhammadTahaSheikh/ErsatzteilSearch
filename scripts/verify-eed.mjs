@@ -99,44 +99,32 @@ console.log("\nLive API check (optional)...");
 try {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20000);
-  const response = await fetch(sessionUrl, {
+
+  // Test env: neuesitzung disabled — use sessionid=auto on search (EED docs 7.0.1.1)
+  const liveSearchUrl = buildEedUrl(DEFAULT_TEST_EED_ID, {
+    art: "artikelsuche",
+    suchbg: "SONY",
+    sessionid: "auto",
+    anzahl: "10",
+    shopurl: "https://ersatzteil-search.vercel.app",
+    customerip: "2022ddf07afb45c7f0de5435f2a098c4",
+  });
+
+  const searchResponse = await fetch(liveSearchUrl, {
     signal: controller.signal,
     headers: { Accept: "application/json", "User-Agent": "ErsatzteilSearch/1.0" },
   });
   clearTimeout(timeout);
-  const text = await response.text();
-  console.log(`  HTTP ${response.status}, body preview: ${text.slice(0, 120).replace(/\s+/g, " ")}`);
+  const searchText = await searchResponse.text();
+  console.log(`  Search HTTP ${searchResponse.status}, preview: ${searchText.slice(0, 120).replace(/\s+/g, " ")}`);
 
-  if (text.startsWith("ERROR;")) {
-    const err = parseEedErrorResponse(text);
-    ok(false, `live API returned plain error: ${err?.message}`);
+  if (searchText.startsWith("ERROR;")) {
+    const err = parseEedErrorResponse(searchText);
+    ok(false, `live search error: ${err?.message}`);
   } else {
-    const data = parseEedJson(text);
-    ok(data.sessionid && data.fehlernummer === "0", `live neuesitzung OK, sessionid=${data.sessionid}`);
-
-    const liveSearchUrl = buildEedUrl(DEFAULT_TEST_EED_ID, {
-      art: "artikelsuche",
-      suchbg: "SONY",
-      sessionid: data.sessionid,
-      anzahl: "10",
-      shopurl: "https://ersatzteil-search.vercel.app",
-      customerip: "2022ddf07afb45c7f0de5435f2a098c4",
-    });
-
-    const searchResponse = await fetch(liveSearchUrl, {
-      headers: { Accept: "application/json", "User-Agent": "ErsatzteilSearch/1.0" },
-    });
-    const searchText = await searchResponse.text();
-    console.log(`  Search HTTP ${searchResponse.status}, preview: ${searchText.slice(0, 120).replace(/\s+/g, " ")}`);
-
-    if (searchText.startsWith("ERROR;")) {
-      const err = parseEedErrorResponse(searchText);
-      ok(false, `live search error: ${err?.message}`);
-    } else {
-      const searchData = parseEedJson(searchText);
-      const count = searchData.gesamtanzahltreffer ?? Object.keys(searchData.treffer ?? {}).length;
-      ok(searchData.fehlernummer === "0", `live SONY search OK, ${count} hits`);
-    }
+    const searchData = parseEedJson(searchText);
+    const count = searchData.gesamtanzahltreffer ?? Object.keys(searchData.treffer ?? {}).length;
+    ok(searchData.fehlernummer === "0", `live SONY search OK, ${count} hits`);
   }
 } catch (error) {
   console.log(`  ⚠ live API skipped/unreachable: ${error instanceof Error ? error.message : error}`);

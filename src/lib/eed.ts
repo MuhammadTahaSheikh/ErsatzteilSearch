@@ -63,16 +63,19 @@ function getEedId(): string {
   return getEedIdFromEnv(process.env.EED_ID);
 }
 
-async function createEedSession(
-  options: Omit<EedRequestOptions, "params" | "sessionId">,
+async function resolveSessionId(
+  options: Omit<EedRequestOptions, "params" | "sessionId"> & { sessionId: string },
 ): Promise<string> {
-  const data = await callEed<{ sessionid: string; fehlernummer: string | number }>({
-    ...options,
-    sessionId: "",
-    params: { art: "neuesitzung" },
-  });
+  if (options.sessionId && options.sessionId !== "auto") {
+    return options.sessionId;
+  }
 
-  return data.sessionid;
+  // Test environment: neuesitzung is disabled — use sessionid=auto (EED docs 7.0.1.1)
+  if (isTestEedEnvironment()) {
+    return "auto";
+  }
+
+  return createEedSession(options);
 }
 
 function describeFetchError(error: unknown): string {
@@ -90,6 +93,18 @@ function describeFetchError(error: unknown): string {
 
 function isEedSuccess(fehlernummer: string | number | undefined): boolean {
   return String(fehlernummer ?? "") === "0";
+}
+
+async function createEedSession(
+  options: Omit<EedRequestOptions, "params" | "sessionId">,
+): Promise<string> {
+  const data = await callEed<{ sessionid: string; fehlernummer: string | number }>({
+    ...options,
+    sessionId: "",
+    params: { art: "neuesitzung" },
+  });
+
+  return data.sessionid;
 }
 
 async function callEed<T extends { fehlernummer: string | number; fehlermeldung?: string }>(
@@ -223,13 +238,7 @@ export async function searchProducts(
     return { products: [], total: 0, hint: getTestSearchHint() };
   }
 
-  let sessionId = options.sessionId;
-  let createdSessionId: string | undefined;
-
-  if (!sessionId || sessionId === "auto") {
-    createdSessionId = await createEedSession(options);
-    sessionId = createdSessionId;
-  }
+  let sessionId = await resolveSessionId(options);
 
   const data = await callEed<ProductSearchResponse>({
     ...options,
@@ -248,7 +257,7 @@ export async function searchProducts(
   return {
     products,
     total: Number(data.gesamtanzahltreffer ?? products.length),
-    sessionId: createdSessionId ?? data.neuesessionid,
+    sessionId: data.neuesessionid,
   };
 }
 
@@ -268,8 +277,11 @@ export async function getProductDetails(
     return { product, mock: true };
   }
 
+  const sessionId = await resolveSessionId(options);
+
   const data = await callEed<ProductDetailResponse>({
     ...options,
+    sessionId,
     params: {
       art: "artikeldetails",
       artnr: articleId,
@@ -292,8 +304,11 @@ export async function getProductImageUrl(
     return null;
   }
 
+  const sessionId = await resolveSessionId(options);
+
   const data = await callEed<{ fehlernummer: string; tempurl?: string }>({
     ...options,
+    sessionId,
     params: {
       art: "bild",
       artnr: articleId,
@@ -311,6 +326,15 @@ export async function testEedConnection(
   }
 
   try {
+    if (isTestEedEnvironment()) {
+      const data = await callEed<ProductSearchResponse>({
+        ...options,
+        sessionId: "auto",
+        params: { art: "artikelsuche", suchbg: "SONY", anzahl: "1" },
+      });
+      return { ok: true, sessionId: data.neuesessionid };
+    }
+
     const data = await callEed<{ fehlernummer: string | number; sessionid?: string }>({
       ...options,
       sessionId: "",
