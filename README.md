@@ -34,7 +34,7 @@ cp .env.example .env.local
 
 The default `EED_ID` uses the **German test account** from the [EED documentation](https://shop.euras.com/admin/Dok/eed-doku-eng.php) (section 12). The `test` suffix enables the free test environment.
 
-Try these search terms in test mode: `SONY`, `HDMI`, `AEG`, `SICHERUNG`, `GLAS`.
+Try these search terms with the test API: `SONY`, `AEG`, `HDMI` (only these work in test mode per EED docs section 12).
 
 ### 3. Run locally
 

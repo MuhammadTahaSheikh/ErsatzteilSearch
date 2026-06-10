@@ -8,6 +8,7 @@ interface UseProductSearchResult {
   total: number;
   loading: boolean;
   error: string | null;
+  hint: string | null;
 }
 
 export function useProductSearch(query: string, debounceMs = 350): UseProductSearchResult {
@@ -15,18 +16,21 @@ export function useProductSearch(query: string, debounceMs = 350): UseProductSea
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hint, setHint] = useState<string | null>(null);
 
   const fetchProducts = useCallback(async (searchQuery: string, signal: AbortSignal) => {
     if (searchQuery.trim().length < 2) {
       setProducts([]);
       setTotal(0);
       setError(null);
+      setHint(null);
       setLoading(false);
       return;
     }
 
     setLoading(true);
     setError(null);
+    setHint(null);
 
     try {
       const response = await fetch(
@@ -41,10 +45,12 @@ export function useProductSearch(query: string, debounceMs = 350): UseProductSea
 
       setProducts(data.products ?? []);
       setTotal(data.total ?? 0);
+      setHint(data.hint ?? null);
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
       setProducts([]);
       setTotal(0);
+      setHint(null);
       setError(err instanceof Error ? err.message : "Search failed");
     } finally {
       setLoading(false);
@@ -63,5 +69,5 @@ export function useProductSearch(query: string, debounceMs = 350): UseProductSea
     };
   }, [query, debounceMs, fetchProducts]);
 
-  return { products, total, loading, error };
+  return { products, total, loading, error, hint };
 }

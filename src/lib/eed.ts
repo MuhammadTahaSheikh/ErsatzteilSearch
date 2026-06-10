@@ -42,6 +42,22 @@ interface EedRequestOptions {
 /** Public test credential from EED docs section 12 (DE test account). */
 const DEFAULT_TEST_EED_ID = "AUDs4BRTdG2KJMGkv9U3hcQZ8NUxLdZytest";
 
+/** Allowed search terms when using the EED test environment. */
+export const EED_TEST_SEARCH_TERMS = ["SONY", "AEG", "HDMI"] as const;
+
+export function isTestEedEnvironment(): boolean {
+  return getEedId().endsWith("test");
+}
+
+export function isAllowedTestSearchTerm(query: string): boolean {
+  const normalized = query.trim().toUpperCase();
+  return EED_TEST_SEARCH_TERMS.some((term) => term === normalized);
+}
+
+export function getTestSearchHint(): string {
+  return `Test API only supports: ${EED_TEST_SEARCH_TERMS.join(", ")}`;
+}
+
 function getEedId(): string {
   return process.env.EED_ID?.trim() || DEFAULT_TEST_EED_ID;
 }
@@ -176,6 +192,7 @@ export async function searchProducts(
   total: number;
   sessionId?: string;
   mock?: boolean;
+  hint?: string;
 }> {
   const trimmed = query.trim();
   if (trimmed.length < 2) {
@@ -185,6 +202,10 @@ export async function searchProducts(
   if (isMockModeEnabled()) {
     const result = mockSearchProducts(trimmed);
     return { ...result, mock: true };
+  }
+
+  if (isTestEedEnvironment() && !isAllowedTestSearchTerm(trimmed)) {
+    return { products: [], total: 0, hint: getTestSearchHint() };
   }
 
   const data = await callEed<ProductSearchResponse>({
