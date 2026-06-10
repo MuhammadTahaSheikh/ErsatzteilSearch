@@ -1,11 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { ProductGrid } from "@/components/ProductGrid";
 import { SearchBar } from "@/components/SearchBar";
-import { useProductSearch } from "@/hooks/useProductSearch";
-
-const SUGGESTIONS = ["SONY", "HDMI", "AEG"];
+import { TEST_SEARCH_TERMS, useProductSearch } from "@/hooks/useProductSearch";
 
 const STATS = [
   { label: "Brands", value: "500+" },
@@ -14,16 +11,14 @@ const STATS = [
 ];
 
 export function ProductSearchPage() {
-  const [query, setQuery] = useState("");
-  const { products, total, loading, error, hint } = useProductSearch(query);
+  const { products, total, loading, error, hint, testMode, query, search } =
+    useProductSearch();
 
-  const showEmptyHint = query.trim().length < 2;
   const showNoResults =
-    !showEmptyHint && !loading && products.length === 0 && !error && !hint;
+    Boolean(query) && !loading && products.length === 0 && !error && !hint;
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
-      {/* Hero */}
       <header className="mb-12 text-center lg:mb-16">
         <div className="animate-fade-up mb-4 inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-1.5 text-xs font-semibold tracking-widest text-orange-300 uppercase">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-orange-400" />
@@ -37,8 +32,9 @@ export function ProductSearchPage() {
           <span className="text-gradient">fast</span>
         </h1>
         <p className="animate-fade-up stagger-2 mx-auto mb-8 max-w-2xl text-lg text-slate-400">
-          Search spare parts and accessories with instant results. Type a brand,
-          model, or part number — we&apos;ll find it.
+          {testMode
+            ? "Test API — select one of the allowed keywords below."
+            : "Search spare parts and accessories with instant results."}
         </p>
 
         <div className="animate-fade-up stagger-3 mb-10 flex flex-wrap justify-center gap-6 sm:gap-10">
@@ -58,35 +54,33 @@ export function ProductSearchPage() {
         </div>
       </header>
 
-      <div className="animate-fade-up stagger-4 mb-10 flex justify-center">
-        <SearchBar value={query} onChange={setQuery} loading={loading} />
-      </div>
-
-      {showEmptyHint && (
-        <div className="animate-fade-in text-center">
-          <p className="mb-5 text-sm text-slate-500">Popular searches</p>
+      {testMode ? (
+        <div className="animate-fade-up stagger-4 mb-10 text-center">
+          <p className="mb-4 text-sm text-slate-500">Select a test keyword</p>
           <div className="flex flex-wrap justify-center gap-3">
-            {SUGGESTIONS.map((term, i) => (
+            {TEST_SEARCH_TERMS.map((term) => (
               <button
                 key={term}
                 type="button"
-                onClick={() => setQuery(term)}
-                className={`chip-hover glass rounded-full px-5 py-2 text-sm font-medium text-slate-300 stagger-${i + 1}`}
-                style={{
-                  animation: `fade-up 0.5s ease ${0.1 + i * 0.08}s forwards`,
-                  opacity: 0,
-                }}
+                onClick={() => search(term)}
+                className={`chip-hover rounded-full px-6 py-2.5 text-sm font-semibold transition ${
+                  query === term
+                    ? "bg-orange-500 text-white shadow-lg shadow-orange-500/25"
+                    : "glass text-slate-300"
+                }`}
               >
-                <span className="mr-1.5 text-orange-400">→</span>
                 {term}
               </button>
             ))}
           </div>
-          <p className="mt-8 text-xs text-slate-600">
-            Test keywords: <span className="text-slate-400">SONY</span>,{" "}
-            <span className="text-slate-400">AEG</span>,{" "}
-            <span className="text-slate-400">HDMI</span>
-          </p>
+        </div>
+      ) : (
+        <div className="animate-fade-up stagger-4 mb-10 flex justify-center">
+          <SearchBar
+            value={query}
+            onChange={(value) => search(value)}
+            loading={loading}
+          />
         </div>
       )}
 
@@ -102,7 +96,7 @@ export function ProductSearchPage() {
         </div>
       )}
 
-      {!showEmptyHint && !error && !hint && (
+      {query && !error && !hint && (
         <p className="animate-fade-in mb-6 flex items-center gap-2 text-sm text-slate-400">
           {loading ? (
             <>
@@ -120,19 +114,8 @@ export function ProductSearchPage() {
 
       {showNoResults && (
         <div className="animate-scale-in glass mx-auto max-w-lg rounded-2xl py-20 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-800/50 text-slate-500">
-            <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-              />
-            </svg>
-          </div>
           <p className="text-lg font-semibold text-white">No products found</p>
-          <p className="mt-2 text-sm text-slate-500">
-            Try SONY, AEG, or HDMI
-          </p>
+          <p className="mt-2 text-sm text-slate-500">Try SONY, AEG, or HDMI</p>
         </div>
       )}
 

@@ -3,7 +3,15 @@
 import { useCallback, useEffect, useState } from "react";
 import type { NormalizedProduct } from "@/lib/types";
 
-const TEST_SEARCH_TERMS = ["SONY", "AEG", "HDMI"];
+export const TEST_SEARCH_TERMS = ["SONY", "AEG", "HDMI"] as const;
+
+const TEST_HINT = "Test API only supports: SONY, AEG, HDMI — click a button below";
+
+function isExactTestTerm(query: string): boolean {
+  return TEST_SEARCH_TERMS.includes(
+    query.trim().toUpperCase() as (typeof TEST_SEARCH_TERMS)[number],
+  );
+}
 
 interface UseProductSearchResult {
   products: NormalizedProduct[];
@@ -11,9 +19,13 @@ interface UseProductSearchResult {
   loading: boolean;
   error: string | null;
   hint: string | null;
+  testMode: boolean;
+  query: string;
+  search: (term: string) => void;
 }
 
-export function useProductSearch(query: string, debounceMs = 350): UseProductSearchResult {
+export function useProductSearch(): UseProductSearchResult {
+  const [query, setQuery] = useState("");
   const [products, setProducts] = useState<NormalizedProduct[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -25,77 +37,86 @@ export function useProductSearch(query: string, debounceMs = 350): UseProductSea
   useEffect(() => {
     fetch("/api/health/eed")
       .then((response) => response.json())
-      .then((data) => setTestMode(Boolean(data.testMode)))
+      .then((data) => {
+        const isTest = Boolean(data.testMode);
+        setTestMode(isTest);
+        if (isTest) {
+          setQuery("SONY");
+        }
+      })
       .catch(() => setTestMode(false))
       .finally(() => setConfigReady(true));
   }, []);
 
-  const fetchProducts = useCallback(
-    async (searchQuery: string, signal: AbortSignal) => {
-      const normalized = searchQuery.trim().toUpperCase();
+  const fetchProducts = useCallback(async (searchQuery: string, signal: AbortSignal) => {
+    const normalized = searchQuery.trim().toUpperCase();
 
-      if (normalized.length < 2) {
-        setProducts([]);
-        setTotal(0);
-        setError(null);
-        setHint(null);
-        setLoading(false);
-        return;
-      }
-
-      if (testMode && !TEST_SEARCH_TERMS.includes(normalized)) {
-        setProducts([]);
-        setTotal(0);
-        setError(null);
-        setHint(`Test API only supports: ${TEST_SEARCH_TERMS.join(", ")}`);
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
+    if (!normalized) {
+      setProducts([]);
+      setTotal(0);
       setError(null);
       setHint(null);
+      setLoading(false);
+      return;
+    }
 
-      try {
-        const response = await fetch(
-          `/api/search?q=${encodeURIComponent(normalized)}`,
-          { signal },
-        );
-        const data = await response.json();
+    if (testMode && !isExactTestTerm(normalized)) {
+      setProducts([]);
+      setTotal(0);
+      setError(null);
+      setHint(TEST_HINT);
+      setLoading(false);
+      return;
+    }
 
-        if (!response.ok) {
-          throw new Error(data.error ?? data.hint ?? "Search failed");
-        }
+    setLoading(true);
+    setError(null);
+    setHint(null);
 
-        setProducts(data.products ?? []);
-        setTotal(data.total ?? 0);
-        setHint(data.hint ?? null);
-      } catch (err) {
-        if (err instanceof DOMException && err.name === "AbortError") return;
-        setProducts([]);
-        setTotal(0);
-        setHint(null);
-        setError(err instanceof Error ? err.message : "Search failed");
-      } finally {
-        setLoading(false);
+    try {
+      const response = await fetch(
+        `/api/search?q=${encodeURIComponent(normalized)}`,
+        { signal },
+      );
+      const data = await response.json();
+
+      const apiMessage = data.error ?? data.hint ?? "";
+      const isTestMessage = apiMessage.includes("Test mode only possible");
+
+      if (!response.ok && !isTestMessage) {
+        throw new Error(apiMessage || "Search failed");
       }
-    },
-    [testMode],
-  );
+
+      setProducts(data.products ?? []);
+      setTotal(data.total ?? 0);
+      setHint(isTestMessage ? TEST_HINT : (data.hint ?? null));
+      setError(isTestMessage ? null : null);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      const message = err instanceof Error ? err.message : "Search failed";
+      setProducts([]);
+      setTotal(0);
+      setHint(message.includes("Test mode only possible") ? TEST_HINT : null);
+      setError(message.includes("Test mode only possible") ? null : message);
+    } finally {
+      setLoading(false);
+    }
+  }, [testMode]);
 
   useEffect(() => {
-    if (!configReady) return;
+    if (!configReady || !query) return;
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => {
-      void fetchProducts(query, controller.signal);
-    }, debounceMs);
+    void fetchProducts(query, controller.signal);
 
-    return () => {
-      clearTimeout(timeout);
-      controller.abort();
-    };
-  }, [query, debounceMs, fetchProducts, configReady]);
+    return () => controller.abort();
+  }, [query, configReady, fetchProducts]);
 
-  return { products, total, loading, error, hint };
+  const search = useCallback((term: string) => {
+    setQuery(term.trim().toUpperCase());
+    setHint(null);
+    setError(null);
+  }, []);
+
+  return { products, total, loading, error, hint, testMode, query, search };
 }

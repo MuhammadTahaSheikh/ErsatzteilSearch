@@ -65,11 +65,11 @@ function getEedId(): string {
 function buildEedUrl({ params }: Pick<EedRequestOptions, "params">): string {
   const searchParams = new URLSearchParams({
     format: "json",
-    id: getEedId(),
     ...params,
   });
 
-  return `${EED_BASE_URL}?${searchParams.toString()}`;
+  // EED docs: customer id is the first URL parameter (before format=json&...)
+  return `${EED_BASE_URL}?${getEedId()}&${searchParams.toString()}`;
 }
 
 function describeFetchError(error: unknown): string {
@@ -216,8 +216,9 @@ export async function searchProducts(
     params: {
       art: "artikelsuche",
       suchbg: searchTerm,
-      anzahl: "25",
-      bigPicture: "1",
+      ...(isTestEedEnvironment()
+        ? { anzahl: "10" }
+        : { anzahl: "25", bigPicture: "1" }),
     },
   });
 

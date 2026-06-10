@@ -51,12 +51,16 @@ export async function GET(request: NextRequest) {
         ? error.message
         : "Failed to search products";
 
-    const isTestHint = message.includes("Test API only supports");
+    const isTestHint =
+      message.includes("Test API only supports") ||
+      message.includes("Test mode only possible");
 
     return NextResponse.json(
       {
         error: isTestHint ? undefined : message,
-        hint: isTestHint ? message : undefined,
+        hint: isTestHint
+          ? "Test API only supports: SONY, AEG, HDMI — click a button below"
+          : undefined,
         products: [],
         total: 0,
       },
