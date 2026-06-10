@@ -1,7 +1,6 @@
-/**
- * EED sometimes returns almost-JSON with unquoted numeric keys, e.g. {0:"A"}.
- * @see https://shop.euras.com/admin/Dok/eed-doku-eng.php section 7.1
- */
+import { parseEedErrorResponse } from "./eed-url";
+
+/** EED sometimes returns almost-JSON with unquoted numeric keys, e.g. {0:"A"}. */
 export function sanitizeEedJson(raw: string): string {
   return raw
     .trim()
@@ -14,6 +13,11 @@ export function parseEedJson<T>(raw: string): T {
 
   if (!text) {
     throw new Error("EED gateway returned an empty response");
+  }
+
+  const plainError = parseEedErrorResponse(text);
+  if (plainError) {
+    throw new Error(`${plainError.message} (EED ${plainError.code})`);
   }
 
   if (text.startsWith("<!") || text.startsWith("<html") || text.startsWith("<")) {

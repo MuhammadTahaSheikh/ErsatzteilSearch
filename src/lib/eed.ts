@@ -18,8 +18,8 @@ import {
   parseGermanPrice,
 } from "./format";
 import { parseEedJson } from "./parse-eed-json";
+import { buildEedUrl, DEFAULT_TEST_EED_ID, getEedIdFromEnv } from "./eed-url";
 
-const EED_BASE_URL = "https://shop.euras.com/eed.php";
 const REQUEST_TIMEOUT_MS = 30_000;
 
 export class EedApiError extends Error {
@@ -41,7 +41,7 @@ interface EedRequestOptions {
 }
 
 /** Public test credential from EED docs section 12 (DE test account). */
-const DEFAULT_TEST_EED_ID = "AUDs4BRTdG2KJMGkv9U3hcQZ8NUxLdZytest";
+export { DEFAULT_TEST_EED_ID };
 
 /** Allowed search terms when using the EED test environment. */
 export const EED_TEST_SEARCH_TERMS = ["SONY", "AEG", "HDMI"] as const;
@@ -60,28 +60,7 @@ export function getTestSearchHint(): string {
 }
 
 function getEedId(): string {
-  return process.env.EED_ID?.trim() || DEFAULT_TEST_EED_ID;
-}
-
-function buildEedUrl(
-  { params }: Pick<EedRequestOptions, "params">,
-  style: "prefix" | "id" = "prefix",
-): string {
-  const searchParams = new URLSearchParams({
-    format: "json",
-    ...params,
-  });
-
-  if (style === "id") {
-    searchParams.set("id", getEedId());
-    return `${EED_BASE_URL}?${searchParams.toString()}`;
-  }
-
-  return `${EED_BASE_URL}?${getEedId()}&${searchParams.toString()}`;
-}
-
-function isEedSuccess(fehlernummer: string | number | undefined): boolean {
-  return String(fehlernummer ?? "") === "0";
+  return getEedIdFromEnv(process.env.EED_ID);
 }
 
 async function createEedSession(
@@ -109,9 +88,12 @@ function describeFetchError(error: unknown): string {
   return "Unknown network error";
 }
 
+function isEedSuccess(fehlernummer: string | number | undefined): boolean {
+  return String(fehlernummer ?? "") === "0";
+}
+
 async function callEed<T extends { fehlernummer: string | number; fehlermeldung?: string }>(
   options: EedRequestOptions,
-  urlStyle: "prefix" | "id" = "prefix",
 ): Promise<T & { neuesessionid?: string; sessionid?: string }> {
   const requestParams: Record<string, string> = {
     ...options.params,
@@ -123,7 +105,7 @@ async function callEed<T extends { fehlernummer: string | number; fehlermeldung?
     requestParams.sessionid = options.sessionId;
   }
 
-  const url = buildEedUrl({ params: requestParams }, urlStyle);
+  const url = buildEedUrl(getEedId(), requestParams);
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -244,41 +226,21 @@ export async function searchProducts(
   let sessionId = options.sessionId;
   let createdSessionId: string | undefined;
 
-  const runSearch = (style: "prefix" | "id") =>
-    callEed<ProductSearchResponse>(
-      {
-        ...options,
-        sessionId: sessionId!,
-        params: {
-          art: "artikelsuche",
-          suchbg: searchTerm,
-          anzahl: "10",
-          ...(isTestEedEnvironment() ? {} : { bigPicture: "1" }),
-        },
-      },
-      style,
-    );
-
   if (!sessionId || sessionId === "auto") {
     createdSessionId = await createEedSession(options);
     sessionId = createdSessionId;
   }
 
-  let data: ProductSearchResponse & { neuesessionid?: string };
-
-  try {
-    data = await runSearch("prefix");
-  } catch (error) {
-    const message = error instanceof EedApiError ? error.message : "";
-    if (
-      isAllowedTestSearchTerm(searchTerm) &&
-      message.includes("Test mode only possible")
-    ) {
-      data = await runSearch("id");
-    } else {
-      throw error;
-    }
-  }
+  const data = await callEed<ProductSearchResponse>({
+    ...options,
+    sessionId,
+    params: {
+      art: "artikelsuche",
+      suchbg: searchTerm,
+      anzahl: "10",
+      ...(isTestEedEnvironment() ? {} : { bigPicture: "1" }),
+    },
+  });
 
   const hits = data.treffer ?? {};
   const products = Object.values(hits).map(normalizeProduct);
