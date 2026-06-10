@@ -5,6 +5,8 @@ import {
   hashCustomerIp,
   resolveClientIp,
 } from "@/lib/eed";
+import { getMockProductName, isMockModeEnabled } from "@/lib/mock-data";
+import { placeholderSvgResponse } from "@/lib/placeholder-image";
 import { getSessionId, resolveShopUrl } from "@/lib/session";
 
 interface RouteContext {
@@ -13,6 +15,12 @@ interface RouteContext {
 
 export async function GET(request: NextRequest, context: RouteContext) {
   const { artnr } = await context.params;
+
+  if (isMockModeEnabled()) {
+    const label = getMockProductName(artnr) ?? "Spare Part";
+    return placeholderSvgResponse(artnr, label);
+  }
+
   const sessionId = (await getSessionId()) ?? "auto";
   const shopUrl = resolveShopUrl(request);
   const customerIpHash = hashCustomerIp(

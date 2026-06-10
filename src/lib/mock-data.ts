@@ -143,6 +143,13 @@ export function mockSearchProducts(query: string): {
   return { products, total: products.length };
 }
 
+export function getMockProductName(articleId: string): string | undefined {
+  return (
+    MOCK_DETAILS[articleId]?.name ??
+    MOCK_PRODUCTS.find((product) => product.id === articleId)?.name
+  );
+}
+
 export function mockGetProductDetails(articleId: string): NormalizedProductDetail | null {
   return MOCK_DETAILS[articleId] ?? null;
 }

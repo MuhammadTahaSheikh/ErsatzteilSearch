@@ -30,7 +30,6 @@ export function SearchBar({ value, onChange, loading }: SearchBarProps) {
         onChange={(e) => onChange(e.target.value)}
         placeholder="Search spare parts… e.g. SONY, HDMI, AEG"
         className="w-full rounded-xl border border-slate-200 bg-white py-3.5 pr-12 pl-12 text-base text-slate-900 shadow-sm transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 focus:outline-none"
-        autoFocus
       />
       {loading && (
         <div className="absolute inset-y-0 right-0 flex items-center pr-4">
