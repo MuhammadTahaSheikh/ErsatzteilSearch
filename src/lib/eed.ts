@@ -1,4 +1,9 @@
 import { createHash } from "crypto";
+import {
+  isMockModeEnabled,
+  mockGetProductDetails,
+  mockSearchProducts,
+} from "./mock-data";
 import type {
   NormalizedProduct,
   NormalizedProductDetail,
@@ -20,6 +25,7 @@ export class EedApiError extends Error {
   constructor(
     message: string,
     public readonly code?: string,
+    public readonly cause?: unknown,
   ) {
     super(message);
     this.name = "EedApiError";
@@ -44,10 +50,24 @@ function getEedId(): string {
 function buildEedUrl({ params }: Pick<EedRequestOptions, "params">): string {
   const searchParams = new URLSearchParams({
     format: "json",
+    id: getEedId(),
     ...params,
   });
 
-  return `${EED_BASE_URL}?${getEedId()}&${searchParams.toString()}`;
+  return `${EED_BASE_URL}?${searchParams.toString()}`;
+}
+
+function describeFetchError(error: unknown): string {
+  if (error instanceof Error) {
+    if (error.name === "AbortError") {
+      return "EED gateway request timed out after 30s";
+    }
+    if (error.message.includes("fetch failed")) {
+      return "Cannot connect to shop.euras.com — check your network or try deploying to Vercel";
+    }
+    return error.message;
+  }
+  return "Unknown network error";
 }
 
 async function callEed<T extends { fehlernummer: string; fehlermeldung?: string }>(
@@ -69,13 +89,24 @@ async function callEed<T extends { fehlernummer: string; fehlermeldung?: string 
     const response = await fetch(url, {
       signal: controller.signal,
       cache: "no-store",
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "ErsatzteilSearch/1.0",
+      },
     });
 
     if (!response.ok) {
       throw new EedApiError(`EED gateway returned HTTP ${response.status}`);
     }
 
-    const data = (await response.json()) as T & { neuesessionid?: string };
+    const text = await response.text();
+    let data: T & { neuesessionid?: string };
+
+    try {
+      data = JSON.parse(text) as T & { neuesessionid?: string };
+    } catch {
+      throw new EedApiError("EED gateway returned invalid JSON");
+    }
 
     if (data.fehlernummer !== "0") {
       throw new EedApiError(
@@ -87,10 +118,9 @@ async function callEed<T extends { fehlernummer: string; fehlermeldung?: string 
     return data;
   } catch (error) {
     if (error instanceof EedApiError) throw error;
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new EedApiError("EED gateway request timed out");
-    }
-    throw new EedApiError("Unable to reach the EED gateway");
+
+    const detail = describeFetchError(error);
+    throw new EedApiError(`Unable to reach the EED gateway: ${detail}`, undefined, error);
   } finally {
     clearTimeout(timeout);
   }
@@ -146,10 +176,16 @@ export async function searchProducts(
   products: NormalizedProduct[];
   total: number;
   sessionId?: string;
+  mock?: boolean;
 }> {
   const trimmed = query.trim();
   if (trimmed.length < 2) {
     return { products: [], total: 0 };
+  }
+
+  if (isMockModeEnabled()) {
+    const result = mockSearchProducts(trimmed);
+    return { ...result, mock: true };
   }
 
   const data = await callEed<ProductSearchResponse>({
@@ -178,7 +214,16 @@ export async function getProductDetails(
 ): Promise<{
   product: NormalizedProductDetail;
   sessionId?: string;
+  mock?: boolean;
 }> {
+  if (isMockModeEnabled()) {
+    const product = mockGetProductDetails(articleId);
+    if (!product) {
+      throw new EedApiError(`Product ${articleId} not found`);
+    }
+    return { product, mock: true };
+  }
+
   const data = await callEed<ProductDetailResponse>({
     ...options,
     params: {
@@ -199,6 +244,10 @@ export async function getProductImageUrl(
   articleId: string,
   options: Omit<EedRequestOptions, "params">,
 ): Promise<string | null> {
+  if (isMockModeEnabled()) {
+    return null;
+  }
+
   const data = await callEed<{ fehlernummer: string; tempurl?: string }>({
     ...options,
     params: {
@@ -208,4 +257,24 @@ export async function getProductImageUrl(
   });
 
   return data.tempurl ?? null;
+}
+
+export async function testEedConnection(
+  options: Omit<EedRequestOptions, "params">,
+): Promise<{ ok: true; sessionId?: string } | { ok: false; error: string }> {
+  if (isMockModeEnabled()) {
+    return { ok: true };
+  }
+
+  try {
+    const data = await callEed<{ fehlernummer: string; neuesessionid?: string }>({
+      ...options,
+      params: { art: "neuesitzung" },
+    });
+    return { ok: true, sessionId: data.neuesessionid };
+  } catch (error) {
+    const message =
+      error instanceof EedApiError ? error.message : "Connection failed";
+    return { ok: false, error: message };
+  }
 }

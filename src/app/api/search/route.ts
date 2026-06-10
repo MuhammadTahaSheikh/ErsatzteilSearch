@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.json({
       products: result.products,
       total: result.total,
+      ...(result.mock ? { mock: true } : {}),
     });
 
     if (result.sessionId) {

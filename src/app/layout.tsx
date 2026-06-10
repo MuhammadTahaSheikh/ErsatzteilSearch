@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
+import { MockModeBanner } from "@/components/MockModeBanner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,6 +30,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-slate-50 text-slate-900">
+        <MockModeBanner />
         <header className="border-b border-slate-200 bg-white">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
             <Link href="/" className="flex items-center gap-2">
@@ -40,7 +42,7 @@ export default function RootLayout({
               </span>
             </Link>
             <p className="hidden text-sm text-slate-500 sm:block">
-              Powered by ASWO EED API
+              Powered by Muhammad Taha
             </p>
           </div>
         </header>
