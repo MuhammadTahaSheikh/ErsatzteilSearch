@@ -5,9 +5,7 @@ export function SiteFooter() {
         <p className="text-xs text-[var(--muted)]">
           Technical test task — Mini Product Search
         </p>
-        <p className="mt-2 text-xs text-[var(--muted)]/70">
-          Real-time spare parts search powered by ASWO EED API
-        </p>
+       
       </div>
     </footer>
   );
