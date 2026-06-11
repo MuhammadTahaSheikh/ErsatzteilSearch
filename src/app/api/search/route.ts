@@ -20,11 +20,12 @@ export async function GET(request: NextRequest) {
   const customerIpHash = hashCustomerIp(
     resolveClientIp(request.headers.get("x-forwarded-for")),
   );
+  const searchShopUrl = `${shopUrl.replace(/\/$/, "")}/?q=${encodeURIComponent(query)}`;
 
   try {
     const result = await searchProducts(query, {
       sessionId,
-      shopUrl,
+      shopUrl: searchShopUrl,
       customerIpHash,
     });
 

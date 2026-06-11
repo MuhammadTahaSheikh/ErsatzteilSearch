@@ -152,9 +152,6 @@ async function callEed<T extends { fehlernummer: string | number; fehlermeldung?
 
     if (!isEedSuccess(data.fehlernummer)) {
       const message = data.fehlermeldung ?? "Unknown EED API error";
-      if (message.includes("Test mode only possible")) {
-        throw new EedApiError(getTestSearchHint(), String(data.fehlernummer));
-      }
       throw new EedApiError(message, String(data.fehlernummer));
     }
 
