@@ -22,10 +22,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const { id } = await params;
   const headersList = await headers();
   const sessionId = (await getSessionId()) ?? "auto";
-  const shopUrl = resolveShopUrlFromHost(
+  const baseShopUrl = resolveShopUrlFromHost(
     headersList.get("host"),
     headersList.get("referer"),
   );
+  const shopUrl = `${baseShopUrl.replace(/\/$/, "")}/product/${encodeURIComponent(id)}`;
   const customerIpHash = hashCustomerIp(
     resolveClientIp(headersList.get("x-forwarded-for")),
   );

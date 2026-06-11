@@ -260,19 +260,29 @@ export async function getProductDetails(
 
   const sessionId = await resolveSessionId(options);
 
-  const data = await callEed<ProductDetailResponse>({
+  // artikeldetails is restricted to fixed test article IDs on the public credential.
+  // artikelsuche + artnr + artikeldetails=1 works for any article from search results.
+  const data = await callEed<ProductSearchResponse>({
     ...options,
     sessionId,
     params: {
-      art: "artikeldetails",
+      art: "artikelsuche",
       artnr: articleId,
+      artikeldetails: "1",
       bigPicture: "1",
       attrib: "1",
     },
   });
 
+  const hits = data.treffer ?? {};
+  const item = Object.values(hits)[0] as ProductDetailResponse | undefined;
+
+  if (!item) {
+    throw new EedApiError(`Product ${articleId} not found`);
+  }
+
   return {
-    product: normalizeProductDetail(data),
+    product: normalizeProductDetail(item),
     sessionId: data.neuesessionid,
   };
 }
