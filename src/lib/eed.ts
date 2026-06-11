@@ -245,6 +245,7 @@ export async function searchProducts(
 export async function getProductDetails(
   articleId: string,
   options: Omit<EedRequestOptions, "params">,
+  searchQuery?: string,
 ): Promise<{
   product: NormalizedProductDetail;
   sessionId?: string;
@@ -258,33 +259,45 @@ export async function getProductDetails(
     return { product, mock: true };
   }
 
-  const sessionId = await resolveSessionId(options);
-
-  // artikeldetails is restricted to fixed test article IDs on the public credential.
-  // artikelsuche + artnr + artikeldetails=1 works for any article from search results.
-  const data = await callEed<ProductSearchResponse>({
-    ...options,
-    sessionId,
-    params: {
-      art: "artikelsuche",
-      artnr: articleId,
-      artikeldetails: "1",
-      bigPicture: "1",
-      attrib: "1",
-    },
-  });
-
-  const hits = data.treffer ?? {};
-  const item = Object.values(hits)[0] as ProductDetailResponse | undefined;
-
-  if (!item) {
-    throw new EedApiError(`Product ${articleId} not found`);
+  // Public test API blocks direct artnr lookups except fixed IDs.
+  // Re-use the search results when we know the query the user searched for.
+  if (searchQuery?.trim()) {
+    const { products } = await searchProducts(searchQuery.trim(), options);
+    const found = products.find((product) => product.id === articleId);
+    if (found) {
+      return { product: found };
+    }
   }
 
-  return {
-    product: normalizeProductDetail(item),
-    sessionId: data.neuesessionid,
-  };
+  const sessionId = await resolveSessionId(options);
+
+  try {
+    const data = await callEed<ProductSearchResponse>({
+      ...options,
+      sessionId,
+      params: {
+        art: "artikelsuche",
+        artnr: articleId,
+        artikeldetails: "1",
+        bigPicture: "1",
+        attrib: "1",
+      },
+    });
+
+    const hits = data.treffer ?? {};
+    const item = Object.values(hits)[0] as ProductDetailResponse | undefined;
+
+    if (item) {
+      return {
+        product: normalizeProductDetail(item),
+        sessionId: data.neuesessionid,
+      };
+    }
+  } catch {
+    // fall through to not found
+  }
+
+  throw new EedApiError(`Product ${articleId} not found`);
 }
 
 export async function getProductImageUrl(

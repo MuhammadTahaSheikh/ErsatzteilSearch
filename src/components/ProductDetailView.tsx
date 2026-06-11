@@ -6,6 +6,7 @@ import type { NormalizedProductDetail } from "@/lib/types";
 
 interface ProductDetailViewProps {
   product: NormalizedProductDetail;
+  searchQuery?: string;
 }
 
 function DetailImage({ product }: { product: NormalizedProductDetail }) {
@@ -52,13 +53,16 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-export function ProductDetailView({ product }: ProductDetailViewProps) {
+export function ProductDetailView({ product, searchQuery }: ProductDetailViewProps) {
   const categoryPath = product.categoryPath?.map((g) => g.vgruppenname).join(" › ");
+  const backHref = searchQuery
+    ? `/?q=${encodeURIComponent(searchQuery)}`
+    : "/";
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
       <Link
-        href="/"
+        href={backHref}
         className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-orange-600 hover:text-orange-700"
       >
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -103,8 +107,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
             <InfoRow label="Article no." value={product.id} />
             <InfoRow label="EAN" value={product.ean} />
             <InfoRow label="Manufacturer" value={product.manufacturer} />
-            <InfoRow label="Weight" value={product.weight ? `${product.weight} kg` : undefined} />
-            <InfoRow label="Category" value={categoryPath} />
+            <InfoRow label="Category" value={categoryPath ?? product.category} />
             <InfoRow label="Disposal cost" value={product.disposalCost} />
           </dl>
 

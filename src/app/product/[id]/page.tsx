@@ -6,22 +6,19 @@ import {
   hashCustomerIp,
   resolveClientIp,
 } from "@/lib/eed";
-import {
-  getSessionId,
-  resolveShopUrlFromHost,
-  setSessionId,
-} from "@/lib/session";
+import { resolveShopUrlFromHost } from "@/lib/session";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
 interface ProductPageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ q?: string }>;
 }
 
-export default async function ProductPage({ params }: ProductPageProps) {
+export default async function ProductPage({ params, searchParams }: ProductPageProps) {
   const { id } = await params;
+  const { q: searchQuery } = await searchParams;
   const headersList = await headers();
-  const sessionId = (await getSessionId()) ?? "auto";
   const baseShopUrl = resolveShopUrlFromHost(
     headersList.get("host"),
     headersList.get("referer"),
@@ -32,17 +29,17 @@ export default async function ProductPage({ params }: ProductPageProps) {
   );
 
   try {
-    const result = await getProductDetails(id, {
-      sessionId,
-      shopUrl,
-      customerIpHash,
-    });
+    const result = await getProductDetails(
+      id,
+      {
+        sessionId: "auto",
+        shopUrl,
+        customerIpHash,
+      },
+      searchQuery,
+    );
 
-    if (result.sessionId) {
-      await setSessionId(result.sessionId);
-    }
-
-    return <ProductDetailView product={result.product} />;
+    return <ProductDetailView product={result.product} searchQuery={searchQuery} />;
   } catch (error) {
     if (error instanceof EedApiError) {
       return (

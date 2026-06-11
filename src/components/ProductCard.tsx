@@ -6,6 +6,7 @@ import type { NormalizedProduct } from "@/lib/types";
 
 interface ProductCardProps {
   product: NormalizedProduct;
+  searchQuery?: string;
 }
 
 function ProductImage({ product }: { product: NormalizedProduct }) {
@@ -39,10 +40,14 @@ function ProductImage({ product }: { product: NormalizedProduct }) {
   );
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, searchQuery }: ProductCardProps) {
+  const href = searchQuery
+    ? `/product/${encodeURIComponent(product.id)}?q=${encodeURIComponent(searchQuery)}`
+    : `/product/${encodeURIComponent(product.id)}`;
+
   return (
     <Link
-      href={`/product/${encodeURIComponent(product.id)}`}
+      href={href}
       className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-md"
     >
       <div className="relative aspect-square bg-white">

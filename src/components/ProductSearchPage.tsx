@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ProductGrid } from "@/components/ProductGrid";
 import { SearchBar } from "@/components/SearchBar";
 import { useProductSearch } from "@/hooks/useProductSearch";
@@ -9,6 +9,13 @@ const SUGGESTIONS = ["SONY", "HDMI", "AEG", "SICHERUNG"];
 
 export function ProductSearchPage() {
   const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const initial = params.get("q");
+    if (initial) setQuery(initial);
+  }, []);
+
   const { products, total, loading, error } = useProductSearch(query);
 
   const showEmptyHint = query.trim().length < 2;
@@ -69,7 +76,7 @@ export function ProductSearchPage() {
         </div>
       )}
 
-      {products.length > 0 && <ProductGrid products={products} />}
+      {products.length > 0 && <ProductGrid products={products} searchQuery={query} />}
     </div>
   );
 }
