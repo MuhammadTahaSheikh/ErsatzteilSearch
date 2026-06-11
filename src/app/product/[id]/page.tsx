@@ -44,9 +44,15 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
     if (error instanceof EedApiError) {
       return (
         <div className="mx-auto max-w-lg px-4 py-20 text-center">
-          <h1 className="mb-2 text-xl font-bold text-slate-900">Product unavailable</h1>
-          <p className="mb-6 text-slate-600">{error.message}</p>
-          <Link href="/" className="font-medium text-orange-600 hover:text-orange-700">
+          <div className="animate-scale-in mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-3xl">
+            ⚠️
+          </div>
+          <h1 className="mb-2 text-xl font-bold text-[var(--foreground)]">Product unavailable</h1>
+          <p className="mb-6 text-[var(--muted)]">{error.message}</p>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 font-medium text-[var(--accent)] transition hover:border-[var(--accent)]"
+          >
             ← Back to search
           </Link>
         </div>

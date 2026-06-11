@@ -15,8 +15,8 @@ function DetailImage({ product }: { product: NormalizedProductDetail }) {
 
   if (!src) {
     return (
-      <div className="flex aspect-square items-center justify-center rounded-xl bg-slate-100 text-slate-400">
-        <svg className="h-20 w-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="flex aspect-square items-center justify-center rounded-2xl bg-[var(--surface-elevated)] text-[var(--muted)]">
+        <svg className="h-20 w-20 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -29,7 +29,7 @@ function DetailImage({ product }: { product: NormalizedProductDetail }) {
   }
 
   return (
-    <div className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-white">
+    <div className="animate-scale-in relative aspect-square overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--card-shadow)]">
       <Image
         src={src}
         alt={product.name}
@@ -46,9 +46,9 @@ function DetailImage({ product }: { product: NormalizedProductDetail }) {
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
   return (
-    <div className="flex justify-between gap-4 border-b border-slate-100 py-3 text-sm last:border-0">
-      <dt className="text-slate-500">{label}</dt>
-      <dd className="text-right font-medium text-slate-900">{value}</dd>
+    <div className="flex justify-between gap-4 border-b border-[var(--border)] py-3 text-sm last:border-0">
+      <dt className="text-[var(--muted)]">{label}</dt>
+      <dd className="text-right font-medium text-[var(--foreground)]">{value}</dd>
     </div>
   );
 }
@@ -60,10 +60,10 @@ export function ProductDetailView({ product, searchQuery }: ProductDetailViewPro
     : "/";
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
       <Link
         href={backHref}
-        className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-orange-600 hover:text-orange-700"
+        className="animate-fade-up mb-8 inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)]/60 px-4 py-2 text-sm font-medium text-[var(--accent)] backdrop-blur-sm transition-all hover:border-[var(--accent)] hover:shadow-[var(--glow-sm)]"
       >
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -74,23 +74,23 @@ export function ProductDetailView({ product, searchQuery }: ProductDetailViewPro
       <div className="grid gap-10 lg:grid-cols-2">
         <DetailImage product={product} />
 
-        <div>
+        <div className="animate-fade-up animate-delay-2">
           {product.category && (
-            <p className="mb-2 text-sm font-semibold tracking-wide text-orange-600 uppercase">
+            <p className="mb-2 text-sm font-semibold tracking-wide text-[var(--accent)] uppercase">
               {product.category}
             </p>
           )}
-          <h1 className="mb-4 text-2xl leading-tight font-bold text-slate-900 sm:text-3xl">
+          <h1 className="mb-5 text-2xl leading-tight font-bold text-[var(--foreground)] sm:text-3xl lg:text-4xl">
             {product.name}
           </h1>
 
           <div className="mb-6 flex flex-wrap items-center gap-3">
-            <p className="text-3xl font-bold text-slate-900">{product.price}</p>
+            <p className="text-3xl font-bold text-[var(--foreground)]">{product.price}</p>
             <span
               className={`rounded-full px-3 py-1 text-xs font-semibold ${
                 product.available
-                  ? "bg-emerald-100 text-emerald-800"
-                  : "bg-slate-200 text-slate-600"
+                  ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                  : "bg-[var(--surface-elevated)] text-[var(--muted)]"
               }`}
             >
               {product.available ? "Available" : "Not available"}
@@ -98,12 +98,12 @@ export function ProductDetailView({ product, searchQuery }: ProductDetailViewPro
           </div>
 
           {product.deliveryTime && (
-            <p className="mb-6 text-sm text-slate-600">
-              Delivery: <span className="font-medium">{product.deliveryTime}</span>
+            <p className="mb-6 text-sm text-[var(--muted)]">
+              Delivery: <span className="font-medium text-[var(--foreground)]">{product.deliveryTime}</span>
             </p>
           )}
 
-          <dl className="rounded-xl border border-slate-200 bg-white px-5">
+          <dl className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 px-5 backdrop-blur-sm">
             <InfoRow label="Article no." value={product.id} />
             <InfoRow label="EAN" value={product.ean} />
             <InfoRow label="Manufacturer" value={product.manufacturer} />
@@ -113,10 +113,10 @@ export function ProductDetailView({ product, searchQuery }: ProductDetailViewPro
 
           {product.attributes && Object.keys(product.attributes).length > 0 && (
             <div className="mt-6">
-              <h2 className="mb-3 text-sm font-semibold text-slate-900 uppercase tracking-wide">
+              <h2 className="mb-3 text-sm font-semibold tracking-wide text-[var(--foreground)] uppercase">
                 Specifications
               </h2>
-              <dl className="rounded-xl border border-slate-200 bg-white px-5">
+              <dl className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 px-5 backdrop-blur-sm">
                 {Object.entries(product.attributes).map(([key, value]) => (
                   <InfoRow
                     key={key}

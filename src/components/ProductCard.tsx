@@ -15,8 +15,8 @@ function ProductImage({ product }: { product: NormalizedProduct }) {
 
   if (!src) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-slate-100 text-slate-400">
-        <svg className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="flex h-full w-full items-center justify-center bg-[var(--surface-elevated)] text-[var(--muted)]">
+        <svg className="h-12 w-12 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -33,7 +33,7 @@ function ProductImage({ product }: { product: NormalizedProduct }) {
       src={src}
       alt={product.name}
       fill
-      className="object-contain p-3"
+      className="object-contain p-3 transition-transform duration-500 group-hover:scale-105"
       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
       unoptimized
     />
@@ -48,29 +48,30 @@ export function ProductCard({ product, searchQuery }: ProductCardProps) {
   return (
     <Link
       href={href}
-      className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-md"
+      className="product-card group flex flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]/90 shadow-[var(--card-shadow)] backdrop-blur-sm hover:border-[var(--accent)]/40"
     >
-      <div className="relative aspect-square bg-white">
+      <div className="relative aspect-square overflow-hidden bg-[var(--surface-elevated)]">
         <ProductImage product={product} />
         {!product.available && (
-          <span className="absolute top-2 left-2 rounded-md bg-slate-800/80 px-2 py-0.5 text-xs font-medium text-white">
+          <span className="absolute top-3 left-3 rounded-lg bg-black/70 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
             Unavailable
           </span>
         )}
+        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[var(--surface)]/80 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
       </div>
       <div className="flex flex-1 flex-col gap-2 p-4">
         {product.category && (
-          <p className="text-xs font-medium tracking-wide text-orange-600 uppercase">
+          <p className="text-xs font-semibold tracking-wide text-[var(--accent)] uppercase">
             {product.category}
           </p>
         )}
-        <h3 className="line-clamp-2 text-sm leading-snug font-semibold text-slate-900 group-hover:text-orange-700">
+        <h3 className="line-clamp-2 text-sm leading-snug font-semibold text-[var(--foreground)] transition-colors group-hover:text-[var(--accent)]">
           {product.name}
         </h3>
-        <div className="mt-auto flex items-end justify-between gap-2">
-          <p className="text-lg font-bold text-slate-900">{product.price}</p>
+        <div className="mt-auto flex items-end justify-between gap-2 pt-2">
+          <p className="text-lg font-bold text-[var(--foreground)]">{product.price}</p>
           {product.deliveryTime && (
-            <p className="text-right text-xs text-slate-500">{product.deliveryTime}</p>
+            <p className="text-right text-xs text-[var(--muted)]">{product.deliveryTime}</p>
           )}
         </div>
       </div>
