@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   EedApiError,
   hashCustomerIp,
+  isTestEedEnvironment,
   resolveClientIp,
   searchProducts,
 } from "@/lib/eed";
@@ -27,13 +28,20 @@ export async function GET(request: NextRequest) {
       customerIpHash,
     });
 
+    if (result.hint) {
+      return NextResponse.json(
+        { error: result.hint, products: [], total: 0 },
+        { status: 400 },
+      );
+    }
+
     const response = NextResponse.json({
       products: result.products,
       total: result.total,
       ...(result.mock ? { mock: true } : {}),
     });
 
-    if (result.sessionId) {
+    if (result.sessionId && !isTestEedEnvironment()) {
       response.cookies.set("eed_session_id", result.sessionId, {
         httpOnly: true,
         sameSite: "lax",

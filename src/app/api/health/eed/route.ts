@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { isTestEedId } from "@/lib/eed-config";
+import { isTestEedEnvironment } from "@/lib/eed";
 import { isMockModeEnabled } from "@/lib/mock-data";
 
 export async function GET() {
   return NextResponse.json({
     mockMode: isMockModeEnabled(),
-    testMode: isTestEedId(),
-    testKeywords: isTestEedId() ? ["SONY", "AEG", "HDMI"] : null,
+    testMode: isTestEedEnvironment(),
+    testKeywords: isTestEedEnvironment() ? ["SONY", "AEG", "HDMI"] : null,
   });
 }
