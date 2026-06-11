@@ -7,17 +7,18 @@ export function getEedIdFromEnv(envId?: string): string {
   return trimmed || DEFAULT_TEST_EED_ID;
 }
 
-/** Build EED URL — credential is the first query key (per EED docs section 5). */
+/** Build EED URL using id= parameter (matches official PHP examples). */
 export function buildEedUrl(
   eedId: string,
   params: Record<string, string>,
 ): string {
   const searchParams = new URLSearchParams({
     format: "json",
+    id: eedId,
     ...params,
   });
 
-  return `${EED_BASE_URL}?${eedId}&${searchParams.toString()}`;
+  return `${EED_BASE_URL}?${searchParams.toString()}`;
 }
 
 export function parseEedErrorResponse(raw: string): {
