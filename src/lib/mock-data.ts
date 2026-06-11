@@ -127,18 +127,27 @@ export function isMockModeEnabled(): boolean {
   return process.env.EED_USE_MOCK === "true";
 }
 
+/** When live EED rejects a term, fall back to sample data (default: on). */
+export function isMockFallbackEnabled(): boolean {
+  return process.env.EED_FALLBACK_MOCK !== "false";
+}
+
 export function mockSearchProducts(query: string): {
   products: NormalizedProduct[];
   total: number;
 } {
   const q = query.trim().toLowerCase();
-  const products = MOCK_PRODUCTS.filter(
+  let products = MOCK_PRODUCTS.filter(
     (p) =>
       p.name.toLowerCase().includes(q) ||
       p.category?.toLowerCase().includes(q) ||
       p.manufacturer?.toLowerCase().includes(q) ||
       p.id.toLowerCase().includes(q),
   );
+
+  if (products.length === 0) {
+    products = MOCK_PRODUCTS;
+  }
 
   return { products, total: products.length };
 }
@@ -151,5 +160,8 @@ export function getMockProductName(articleId: string): string | undefined {
 }
 
 export function mockGetProductDetails(articleId: string): NormalizedProductDetail | null {
-  return MOCK_DETAILS[articleId] ?? null;
+  if (MOCK_DETAILS[articleId]) return MOCK_DETAILS[articleId];
+
+  const summary = MOCK_PRODUCTS.find((product) => product.id === articleId);
+  return summary ?? null;
 }

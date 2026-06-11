@@ -22,7 +22,7 @@ export function ProductSearchPage() {
     if (initial) setQuery(initial);
   }, []);
 
-  const { products, total, loading, error } = useProductSearch(query);
+  const { products, total, loading, error, mockFallback } = useProductSearch(query);
 
   const showEmptyHint = query.trim().length < 2;
   const showNoResults = !showEmptyHint && !loading && products.length === 0 && !error;
@@ -61,6 +61,12 @@ export function ProductSearchPage() {
       <div className="animate-fade-up animate-delay-4 mb-10 flex justify-center">
         <SearchBar value={query} onChange={setQuery} loading={loading} />
       </div>
+
+      {mockFallback && !loading && (
+        <div className="mx-auto mb-6 max-w-2xl rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-center text-sm text-amber-700 dark:text-amber-300">
+          Live API has limited test keywords — showing sample results for this search.
+        </div>
+      )}
 
       {showEmptyHint && (
         <div className="animate-fade-in animate-delay-5 text-center">

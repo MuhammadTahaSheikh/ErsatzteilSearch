@@ -1,5 +1,6 @@
 import { createHash } from "crypto";
 import {
+  isMockFallbackEnabled,
   isMockModeEnabled,
   mockGetProductDetails,
   mockSearchProducts,
@@ -197,6 +198,48 @@ function normalizeProductDetail(
   };
 }
 
+function isTestModeSearchRestriction(error: unknown): boolean {
+  if (!(error instanceof EedApiError)) return false;
+  const message = error.message.toLowerCase();
+  return (
+    message.includes("test mode only possible") ||
+    message.includes("testumgebung") ||
+    message.includes("test api only supports")
+  );
+}
+
+async function executeLiveSearch(
+  searchTerm: string,
+  options: Omit<EedRequestOptions, "params">,
+): Promise<ProductSearchResponse & { neuesessionid?: string }> {
+  const sessionId = await resolveSessionId(options);
+  const strategies = ["artikelsuche", "artikelsuche_neu"] as const;
+  let lastError: EedApiError | null = null;
+
+  for (const art of strategies) {
+    try {
+      return await callEed<ProductSearchResponse>({
+        ...options,
+        sessionId,
+        params: {
+          art,
+          suchbg: searchTerm,
+          anzahl: "10",
+          ...(isTestEedEnvironment() ? {} : { bigPicture: "1" }),
+        },
+      });
+    } catch (error) {
+      if (isTestModeSearchRestriction(error)) {
+        lastError = error as EedApiError;
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  throw lastError ?? new EedApiError("Search failed");
+}
+
 export async function searchProducts(
   query: string,
   options: Omit<EedRequestOptions, "params">,
@@ -205,6 +248,7 @@ export async function searchProducts(
   total: number;
   sessionId?: string;
   mock?: boolean;
+  mockFallback?: boolean;
   hint?: string;
 }> {
   const trimmed = query.trim();
@@ -219,27 +263,24 @@ export async function searchProducts(
 
   const searchTerm = trimmed.toUpperCase();
 
-  const sessionId = await resolveSessionId(options);
+  try {
+    const data = await executeLiveSearch(searchTerm, options);
+    const hits = data.treffer ?? {};
+    const products = Object.values(hits).map(normalizeProduct);
 
-  const data = await callEed<ProductSearchResponse>({
-    ...options,
-    sessionId,
-    params: {
-      art: "artikelsuche",
-      suchbg: searchTerm,
-      anzahl: "10",
-      ...(isTestEedEnvironment() ? {} : { bigPicture: "1" }),
-    },
-  });
+    return {
+      products,
+      total: Number(data.gesamtanzahltreffer ?? products.length),
+      sessionId: data.neuesessionid,
+    };
+  } catch (error) {
+    if (!isMockFallbackEnabled() || !isTestModeSearchRestriction(error)) {
+      throw error;
+    }
 
-  const hits = data.treffer ?? {};
-  const products = Object.values(hits).map(normalizeProduct);
-
-  return {
-    products,
-    total: Number(data.gesamtanzahltreffer ?? products.length),
-    sessionId: data.neuesessionid,
-  };
+    const result = mockSearchProducts(trimmed);
+    return { ...result, mock: true, mockFallback: true };
+  }
 }
 
 export async function getProductDetails(
@@ -250,6 +291,7 @@ export async function getProductDetails(
   product: NormalizedProductDetail;
   sessionId?: string;
   mock?: boolean;
+  mockFallback?: boolean;
 }> {
   if (isMockModeEnabled()) {
     const product = mockGetProductDetails(articleId);
@@ -266,6 +308,13 @@ export async function getProductDetails(
     const found = products.find((product) => product.id === articleId);
     if (found) {
       return { product: found };
+    }
+  }
+
+  if (isMockFallbackEnabled()) {
+    const product = mockGetProductDetails(articleId);
+    if (product) {
+      return { product, mock: true, mockFallback: true };
     }
   }
 

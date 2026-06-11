@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
       products: result.products,
       total: result.total,
       ...(result.mock ? { mock: true } : {}),
+      ...(result.mockFallback ? { mockFallback: true } : {}),
     });
 
     if (result.sessionId && !isTestEedEnvironment()) {
