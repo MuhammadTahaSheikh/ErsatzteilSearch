@@ -18,7 +18,7 @@ import {
   parseGermanPrice,
 } from "./format";
 import { parseEedJson } from "./parse-eed-json";
-import { buildEedUrl, DEFAULT_TEST_EED_ID, getEedIdFromEnv } from "./eed-url";
+import { buildEedUrl, DEFAULT_TEST_EED_ID, getEedIdFromEnv, isPublicTestEedId } from "./eed-url";
 
 const REQUEST_TIMEOUT_MS = 30_000;
 
@@ -43,20 +43,8 @@ interface EedRequestOptions {
 /** Public test credential from EED docs section 12 (DE test account). */
 export { DEFAULT_TEST_EED_ID };
 
-/** Allowed search terms when using the EED test environment. */
-export const EED_TEST_SEARCH_TERMS = ["SONY", "AEG", "HDMI"] as const;
-
 export function isTestEedEnvironment(): boolean {
-  return getEedId().endsWith("test");
-}
-
-export function isAllowedTestSearchTerm(query: string): boolean {
-  const normalized = query.trim().toUpperCase();
-  return EED_TEST_SEARCH_TERMS.some((term) => term === normalized);
-}
-
-export function getTestSearchHint(): string {
-  return `Test API only supports: ${EED_TEST_SEARCH_TERMS.join(", ")}`;
+  return isPublicTestEedId(getEedId());
 }
 
 function getEedId(): string {
@@ -231,11 +219,7 @@ export async function searchProducts(
 
   const searchTerm = trimmed.toUpperCase();
 
-  if (isTestEedEnvironment() && !isAllowedTestSearchTerm(searchTerm)) {
-    return { products: [], total: 0, hint: getTestSearchHint() };
-  }
-
-  let sessionId = await resolveSessionId(options);
+  const sessionId = await resolveSessionId(options);
 
   const data = await callEed<ProductSearchResponse>({
     ...options,

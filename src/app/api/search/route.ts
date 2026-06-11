@@ -29,13 +29,6 @@ export async function GET(request: NextRequest) {
       customerIpHash,
     });
 
-    if (result.hint) {
-      return NextResponse.json(
-        { error: result.hint, products: [], total: 0 },
-        { status: 400 },
-      );
-    }
-
     const response = NextResponse.json({
       products: result.products,
       total: result.total,

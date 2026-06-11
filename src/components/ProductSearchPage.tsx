@@ -1,23 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ProductGrid } from "@/components/ProductGrid";
 import { SearchBar } from "@/components/SearchBar";
 import { useProductSearch } from "@/hooks/useProductSearch";
 
-const SUGGESTIONS = ["SONY", "HDMI", "AEG"];
+const SUGGESTIONS = ["SONY", "HDMI", "AEG", "SICHERUNG"];
 
 export function ProductSearchPage() {
   const [query, setQuery] = useState("");
-  const [testMode, setTestMode] = useState(false);
   const { products, total, loading, error } = useProductSearch(query);
-
-  useEffect(() => {
-    fetch("/api/health/eed")
-      .then((r) => r.json())
-      .then((data) => setTestMode(Boolean(data.testMode && !data.mockMode)))
-      .catch(() => {});
-  }, []);
 
   const showEmptyHint = query.trim().length < 2;
   const showNoResults = !showEmptyHint && !loading && products.length === 0 && !error;
@@ -35,13 +27,6 @@ export function ProductSearchPage() {
           Search thousands of spare parts and accessories. Results update as you type.
         </p>
       </header>
-
-      {testMode && (
-        <div className="mx-auto mb-6 max-w-2xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-900">
-          Connected to the EED <strong>test API</strong>. Only these search terms work:{" "}
-          {SUGGESTIONS.join(", ")}.
-        </div>
-      )}
 
       <div className="mb-8 flex justify-center">
         <SearchBar value={query} onChange={setQuery} loading={loading} />
@@ -67,21 +52,7 @@ export function ProductSearchPage() {
 
       {error && (
         <div className="mx-auto max-w-xl rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-700">
-          <p>{error}</p>
-          {testMode && (
-            <div className="mt-3 flex flex-wrap justify-center gap-2">
-              {SUGGESTIONS.map((term) => (
-                <button
-                  key={term}
-                  type="button"
-                  onClick={() => setQuery(term)}
-                  className="rounded-full bg-white px-3 py-1 text-xs font-medium text-red-800 ring-1 ring-red-200"
-                >
-                  Try {term}
-                </button>
-              ))}
-            </div>
-          )}
+          {error}
         </div>
       )}
 

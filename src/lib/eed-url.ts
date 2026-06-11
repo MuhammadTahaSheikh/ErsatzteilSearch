@@ -1,10 +1,27 @@
 export const EED_BASE_URL = "https://shop.euras.com/eed.php";
 
-export const DEFAULT_TEST_EED_ID = "AUDs4BRTdG2KJMGkv9U3hcQZ8NUxLdZytest";
+/** German public test credential from EED docs section 12 (DE, client 599). */
+export const DEFAULT_TEST_EED_ID = "AUDs4BRTdG2KJMGkv9U3hcQZ8NUxLdZy";
+
+export function normalizeEedId(eedId: string): string {
+  const trimmed = eedId.trim();
+
+  // Docs say append "test" for the test environment, but the suffixed ID rejects
+  // artikelsuche even for allowed keywords like SONY. The base credential works.
+  if (trimmed.toLowerCase().endsWith("test") && trimmed.length > 4) {
+    return trimmed.slice(0, -4);
+  }
+
+  return trimmed;
+}
 
 export function getEedIdFromEnv(envId?: string): string {
   const trimmed = envId?.trim().replace(/^["']|["']$/g, "");
-  return trimmed || DEFAULT_TEST_EED_ID;
+  return normalizeEedId(trimmed || DEFAULT_TEST_EED_ID);
+}
+
+export function isPublicTestEedId(eedId?: string): boolean {
+  return normalizeEedId(eedId ?? getEedIdFromEnv(process.env.EED_ID)) === DEFAULT_TEST_EED_ID;
 }
 
 /** Build EED URL using id= parameter (matches official PHP examples). */
@@ -14,7 +31,7 @@ export function buildEedUrl(
 ): string {
   const searchParams = new URLSearchParams({
     format: "json",
-    id: eedId,
+    id: normalizeEedId(eedId),
     ...params,
   });
 
