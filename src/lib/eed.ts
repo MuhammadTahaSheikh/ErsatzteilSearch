@@ -204,7 +204,9 @@ function isTestModeSearchRestriction(error: unknown): boolean {
   return (
     message.includes("test mode only possible") ||
     message.includes("testumgebung") ||
-    message.includes("test api only supports")
+    message.includes("test api only supports") ||
+    message.includes("testaccount only") ||
+    message.includes("search keywords are allowed")
   );
 }
 
@@ -267,6 +269,11 @@ export async function searchProducts(
     const data = await executeLiveSearch(searchTerm, options);
     const hits = data.treffer ?? {};
     const products = Object.values(hits).map(normalizeProduct);
+
+    if (products.length === 0 && isMockFallbackEnabled() && isTestEedEnvironment()) {
+      const result = mockSearchProducts(trimmed);
+      return { ...result, mock: true, mockFallback: true };
+    }
 
     return {
       products,
